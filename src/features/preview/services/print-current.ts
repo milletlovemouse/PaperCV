@@ -11,7 +11,7 @@ export function prefersCurrentDocumentPrint() {
   );
 }
 
-/** Reuse measured pages and loaded fonts; call print in the original tap, without an iframe. */
+/** Reuse measured pages and fonts; briefly commit the title before opening native printing. */
 export function printCurrentResume(resume: Resume, onDispose: () => void): Promise<PrintResult> {
   const preview = document.querySelector<HTMLElement>(".preview-panel .resume-preview");
   if (!preview || document.documentElement.dataset.pdfReady !== "true" || document.fonts.status === "loading")
@@ -44,6 +44,10 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
   let disposed = false;
   let idleTimer = 0;
   let fallbackTimer = 0;
+  let titleTimer = 0;
+  let titleFrame = 0;
+  let invoking = false;
+  const printTitle = getPrintTitle(resume.title);
   const printMedia = window.matchMedia("print");
   let resolve!: (result: PrintResult) => void;
   let reject!: (reason: Error) => void;
@@ -56,9 +60,11 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
     disposed = true;
     clearTimeout(idleTimer);
     clearTimeout(fallbackTimer);
+    clearTimeout(titleTimer);
+    cancelAnimationFrame(titleFrame);
     clearTimeout(watchdog);
     window.removeEventListener("beforeprint", beforePrint);
-    window.removeEventListener("afterprint", finish);
+    window.removeEventListener("afterprint", finishedPrint);
     window.removeEventListener("focus", returned);
     window.removeEventListener("pagehide", finish);
     document.removeEventListener("visibilitychange", returned);
@@ -73,44 +79,64 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
   };
   const beforePrint = () => {
     started = true;
+    document.title = printTitle;
     clearTimeout(fallbackTimer);
   };
   const finish = () => {
     cleanup();
     resolve(started ? "requested" : "unavailable");
   };
+  const finishedPrint = () => {
+    // Native printing can enqueue a title read after afterprint. Keep the snapshot/title
+    // through that task rather than restoring them inside the event itself.
+    clearTimeout(idleTimer);
+    idleTimer = window.setTimeout(finish, 300);
+  };
   const returned = () => {
-    if (started && document.visibilityState === "visible") idleTimer = window.setTimeout(finish, 0);
+    if (started && document.visibilityState === "visible") finishedPrint();
   };
   const mediaChanged = () => {
     if (printMedia.matches) beforePrint();
-    else if (started) finish();
+    else if (started) finishedPrint();
   };
   // Some mobile browsers never emit afterprint. Do not leave a stale snapshot or lock indefinitely.
   const watchdog = window.setTimeout(finish, 120000);
   window.addEventListener("beforeprint", beforePrint);
-  window.addEventListener("afterprint", finish, { once: true });
+  window.addEventListener("afterprint", finishedPrint, { once: true });
   window.addEventListener("focus", returned);
   window.addEventListener("pagehide", finish, { once: true });
   document.addEventListener("visibilitychange", returned);
   printMedia.addEventListener("change", mediaChanged);
-  document.title = getPrintTitle(resume.title);
+  document.title = printTitle;
   document.body.append(host);
   // Size the whole print document, not just the sheet inside a narrow mobile viewport.
   rootStyle.setProperty(widthProperty, `${paperSize(resume.style.paper).width}mm`);
   document.documentElement.dataset.currentPrint = "true";
-  try {
-    // Keep this synchronous: awaiting font loading or an iframe loses the original tap on mobile.
-    window.print();
-    if (started || disposed) resolve(started ? "requested" : "unavailable");
-    else
-      fallbackTimer = window.setTimeout(() => {
-        cleanup();
-        resolve("unavailable");
-      }, 1500);
-  } catch {
-    cleanup();
-    reject(new Error("浏览器无法调用打印，请使用浏览器菜单中的“打印”（部分手机在“分享”中）"));
-  }
+  const invokePrint = () => {
+    if (disposed || invoking) return;
+    invoking = true;
+    clearTimeout(titleTimer);
+    cancelAnimationFrame(titleFrame);
+    try {
+      // No network/font work here: stay within the tap's transient activation.
+      document.title = printTitle;
+      window.print();
+      if (started || disposed) resolve(started ? "requested" : "unavailable");
+      else
+        fallbackTimer = window.setTimeout(() => {
+          cleanup();
+          resolve("unavailable");
+        }, 1500);
+    } catch {
+      cleanup();
+      reject(new Error("浏览器无法调用打印，请使用浏览器菜单中的“打印”（部分手机在“分享”中）"));
+    }
+  };
+  // Let the title reach the browser UI before native print captures its filename.
+  // Bound the wait so throttled animation frames cannot delay printing indefinitely.
+  titleTimer = window.setTimeout(invokePrint, 100);
+  titleFrame = requestAnimationFrame(() => {
+    titleFrame = requestAnimationFrame(invokePrint);
+  });
   return result;
 }

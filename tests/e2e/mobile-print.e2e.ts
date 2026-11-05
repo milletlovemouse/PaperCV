@@ -39,14 +39,31 @@ try {
         ({ key, resume }) => {
           localStorage.setItem(key, JSON.stringify(resume));
           const state = window as unknown as {
-            printCalls: Array<{ active: boolean; title: string; text: string; elapsed: number }>;
+            printCalls: Array<{
+              active: boolean;
+              title: string;
+              nativeTitle: string;
+              text: string;
+              elapsed: number;
+            }>;
             printMode: string;
             delayedTitles: string[];
             tapTime: number;
+            nativeTitle: string;
           };
           state.printCalls = [];
           state.delayedTitles = [];
           state.printMode = "open";
+          state.nativeTitle = document.title;
+          let observedTitle = document.title;
+          new MutationObserver(() => {
+            if (document.title === observedTitle) return;
+            observedTitle = document.title;
+            const title = observedTitle;
+            requestAnimationFrame(() => {
+              state.nativeTitle = title;
+            });
+          }).observe(document, { subtree: true, childList: true, characterData: true });
           document.addEventListener(
             "click",
             (event) => {
@@ -58,6 +75,7 @@ try {
             state.printCalls.push({
               active: navigator.userActivation.isActive,
               title: document.title,
+              nativeTitle: state.nativeTitle,
               text: document.querySelector(".current-print-document")?.textContent || "",
               elapsed: performance.now() - state.tapTime,
             });
@@ -119,18 +137,32 @@ try {
         document.head.append(stress);
       }, previousWidth);
       await exportButton.click();
-      await page.waitForFunction(() => document.documentElement.dataset.currentPrint === "true");
+      await page.waitForFunction(
+        () => (window as unknown as { printCalls: unknown[] }).printCalls.length === 1,
+      );
       const calls = await page.evaluate(
         () =>
           (
             window as unknown as {
-              printCalls: Array<{ active: boolean; title: string; text: string; elapsed: number }>;
+              printCalls: Array<{
+                active: boolean;
+                title: string;
+                nativeTitle: string;
+                text: string;
+                elapsed: number;
+              }>;
             }
           ).printCalls,
       );
       assert.equal(calls.length, 1);
       assert.equal(calls[0].active, true, "printing keeps the original tap activation");
       assert.equal(calls[0].title, expectedTitle);
+      assert.equal(
+        calls[0].nativeTitle,
+        expectedTitle,
+        "the title has reached the browser UI before print is invoked",
+      );
+      assert.ok(calls[0].elapsed < 250, "title settling does not reintroduce slow mobile export");
       assert.match(calls[0].text, new RegExp(`最新手机快照${index}`));
       assert.equal(await page.locator('iframe[title="简历打印"]').count(), 0);
       assert.deepEqual(requests, [], "mobile export loads no second document or font resources");
@@ -233,18 +265,27 @@ try {
       await exportButton.click();
       await page.locator(".current-print-document").waitFor({ state: "detached" });
       await exportButton.click();
+      await page.waitForFunction(
+        () => (window as unknown as { printCalls: unknown[] }).printCalls.length === 3,
+      );
       assert.equal(
         await page.evaluate(() => (window as unknown as { printCalls: unknown[] }).printCalls.length),
         3,
-        "synchronous afterprint does not retain a stale lock",
+        "a completed print session releases its lock for the next export",
       );
       await page.waitForFunction(
         () => (window as unknown as { delayedTitles: string[] }).delayedTitles.length >= 2,
       );
       assert.deepEqual(
         await page.evaluate(() => (window as unknown as { delayedTitles: string[] }).delayedTitles),
-        [previousTitle, previousTitle],
-        "even an early afterprint restores the website title when the print session ends",
+        [expectedTitle, expectedTitle],
+        "a queued native title read after early afterprint still sees the resume name",
+      );
+      await page.locator(".current-print-document").waitFor({ state: "detached" });
+      assert.equal(
+        await page.title(),
+        previousTitle,
+        "the website title is restored after the print completion grace period",
       );
       if (index === 0) {
         await page.evaluate(() => {
@@ -277,7 +318,7 @@ try {
       }
       assert.deepEqual(errors, []);
       console.log(
-        `PASS ${template.id}: synchronous mobile call (${calls[0].elapsed.toFixed(1)}ms), no new requests, searchable PDF metadata, temporary title with restore, early-afterprint and retry`,
+        `PASS ${template.id}: bounded mobile call (${calls[0].elapsed.toFixed(1)}ms), no new requests, searchable PDF metadata, temporary title with restore, early-afterprint and retry`,
       );
     } finally {
       await context.close();
