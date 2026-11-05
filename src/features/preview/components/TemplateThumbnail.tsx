@@ -1,18 +1,18 @@
-import type { Resume, Template } from "@resume/model";
-import { getTemplate } from "@resume/templates";
+import type { Resume } from "@resume/model";
+import { applyTemplatePreset, type TemplatePreset } from "@resume/template-presets";
 import { layoutAttributes, resumeStyles } from "../lib/presentation";
 import PaperContent from "./PaperContent";
 
 /** Uses the actual template components; no pagination or export side effects. */
-export function TemplateThumbnail({ resume, template }: { resume: Resume; template: Template }) {
+export function TemplateThumbnail({ resume, preset }: { resume: Resume; preset: TemplatePreset }) {
   const preview: Resume = {
     ...resume,
-    style: { ...resume.style, ...getTemplate(template).defaults, template },
+    style: applyTemplatePreset(resume.style, preset.id),
   };
   return (
     <div className="template-thumbnail-frame" aria-hidden="true">
       <div
-        className={`resume-preview template-${template} thumbnail-resume`}
+        className={`resume-preview template-${preset.template} thumbnail-resume`}
         style={resumeStyles(preview)}
         {...layoutAttributes(preview)}
       >

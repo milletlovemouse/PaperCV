@@ -24,6 +24,10 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
   }
   const snapshot = preview.cloneNode(true) as HTMLElement;
   snapshot.classList.add("print-mode");
+  // Native mobile printing may inspect layout before switching to print media.
+  // The snapshot must never retain the editor's screen zoom.
+  const stack = snapshot.querySelector<HTMLElement>(".paper-stack");
+  if (stack) stack.style.zoom = "1";
   snapshot.querySelectorAll(".measure-shell, .paper-caption").forEach((node) => node.remove());
   const host = document.createElement("div");
   host.className = "current-print-document";

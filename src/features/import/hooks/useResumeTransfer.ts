@@ -40,8 +40,8 @@ export function useResumeTransfer(resume: Resume, setToast: (message: string) =>
       const result = await printResume(resume);
       setToast(
         result === "unavailable"
-          ? "浏览器未响应打印，请从浏览器菜单选择“打印”（部分手机在“分享”中）；保存 PDF 时关闭页眉页脚以去掉网址"
-          : "已请求打印：选择另存为 PDF，缩放 100%，关闭页眉页脚可去掉底部网址；完整恢复请另存 JSON 备份",
+          ? "浏览器未响应打印，请从浏览器菜单选择“打印”（部分手机在“分享”中）；若有页眉页脚选项，请关闭；Safari 仍可能添加来源网址"
+          : "已请求打印：选择另存为 PDF，缩放 100%；若有页眉页脚选项请关闭，Safari 仍可能添加来源网址；完整恢复请另存 JSON 备份",
       );
     } catch (error) {
       setToast(error instanceof Error ? error.message : "打印准备失败，请重试");

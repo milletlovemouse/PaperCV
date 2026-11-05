@@ -1,3 +1,4 @@
+export const MIN_PAGE_MARGIN = 6;
 export const MAX_SECTIONS = 40;
 export const MAX_ENTRIES = 150;
 export const TEMPLATE_IDS = ["classic", "modern", "editorial", "sidebar", "timeline", "compact"] as const;
@@ -195,22 +196,24 @@ export const uid = () => crypto.randomUUID();
 export function blankEntry(): Entry {
   return { id: uid(), title: "", subtitle: "", location: "", start: "", end: "", description: "" };
 }
+export const DEFAULT_RESUME_STYLE = {
+  template: "classic",
+  accent: "#34584b",
+  font: "sans",
+  fontSize: 12,
+  lineHeight: 1.65,
+  margin: 17,
+  paper: "a4",
+  ...LAYOUT_DEFAULTS,
+  ...PRESENTATION_DEFAULTS,
+} as const satisfies Resume["style"];
+
 export function blankResume(): Resume {
   return {
     version: 1,
     title: "我的新简历",
     profile: { name: "", role: "", phone: "", email: "", location: "", website: "", summary: "", avatar: "" },
-    style: {
-      template: "classic",
-      accent: "#34584b",
-      font: "sans",
-      fontSize: 12,
-      lineHeight: 1.65,
-      margin: 17,
-      paper: "a4",
-      ...LAYOUT_DEFAULTS,
-      ...PRESENTATION_DEFAULTS,
-    },
+    style: { ...DEFAULT_RESUME_STYLE },
     sections: [
       { id: uid(), title: "教育经历", kind: "education", visible: true, entries: [blankEntry()] },
       { id: uid(), title: "工作经历", kind: "work", visible: true, entries: [blankEntry()] },
@@ -272,7 +275,7 @@ export function normalizeResume(value: unknown): Resume {
       font: choice(s.font, ["sans", "serif", "yahei"], "sans"),
       fontSize: clamp(s.fontSize, 10, 16, 12),
       lineHeight: clamp(s.lineHeight, 1.25, 2.1, 1.65),
-      margin: clamp(s.margin, 10, 25, 17),
+      margin: clamp(s.margin, MIN_PAGE_MARGIN, 25, 17),
       paper: s.paper === "letter" ? "letter" : "a4",
       headerLayout: choice(s.headerLayout, ["auto", "stacked", "split", "inline"], "auto"),
       nameAlign: choice(s.nameAlign, alignments, "auto"),

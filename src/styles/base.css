@@ -1857,7 +1857,12 @@ input[type="file"] {
     padding: 0 !important;
     background: white !important;
     height: auto !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
     overflow: visible !important;
+  }
+  .radix-themes[data-is-root-theme="true"] {
+    min-height: 0 !important;
   }
   .app-shell {
     display: block;

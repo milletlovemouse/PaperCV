@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-纸简 PaperCV 是中文在线简历编辑器，支持内容编辑、六套模板、实时分页预览、PDF 导入、浏览器打印导出和 JSON 备份。
+纸简 PaperCV 是中文在线简历编辑器，支持内容编辑、六种基础布局与 36 套模板预设、实时分页预览、PDF 导入、浏览器打印导出和 JSON 备份。
 
 - 默认保持纯前端架构，编辑、导入、存储与打印准备均在浏览器内完成。
 - 技术栈：React 19、TypeScript、Vite 6、Radix Themes / Radix UI、React DatePicker、PDF.js。
@@ -55,6 +55,7 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 
 - `shared/resume/model.ts` 是数据契约入口，导入数据经过 `normalizeResume`，新增字段同时补齐类型、默认值、校验和兼容处理。
 - 保持已有 localStorage 存储键和旧 JSON 数据兼容。当前主存储键为 `papercv.resume.v1`，不要仅为重构而更改。
+- 模板组合集中维护在 `shared/resume/template-presets.ts`，复用六种基础布局，不为配色或间距组合新增 `Template` 类型。每套预设提供完整外观配置，保留纸张与页码偏好；缩略图和应用操作共用 `applyTemplatePreset`。通过外观值识别当前预设，手动修改后显示“已自定义”，保持旧 JSON 兼容。
 - 数据更新沿用 `useResumeActions`、`useResumeHistory` 和 `useResumePersistence`，保留自动保存及撤销 / 重做行为。
 - `useResumeTransfer` 管理导入、错误与打印准备状态；`usePreviewLayout` 管理缩放、自适应、专注预览和 Escape，并负责清理观察器与事件。
 - 简历内容与页面深浅色主题分别管理；修改编辑器主题不应改变打印纸张效果。
@@ -72,11 +73,13 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 
 约定：
 
-- 编辑器预览和打印页共用内容组件、字体及分页逻辑，长内容和双栏模板都要正确分页。
+- 编辑器预览和打印页共用内容组件、字体及分页逻辑，长内容和双栏模板都要正确分页。页边距支持 6–25 mm，8 mm 的小留白快捷设置与预览、JSON 恢复、打印保持一致，不在导出时偷偷修改用户排版；不能用负边距补偿未知的系统打印边距。
+- 手机打印快照在调用原生打印前显式移除屏幕预览的 zoom，并在打印样式中清除屏幕容器的最小高度；浏览器自行添加的可打印边距和缩放仍需实机验证。
 - 打印使用点击时的简历快照。桌面通过 `?print=<token>` 的同源 iframe 准备，保持消息的 origin、来源窗口和 token 校验；手机复用已完成分页的预览，在点击事件内同步调用顶层 `window.print()`，避免重新加载文档与字体，未就绪时提示用户稍后重试。
 - 手机打印快照通过专用打印容器与编辑器隔离，取消、异常、返回页面及浏览器不响应时清理容器、标题和锁；不把 `window.print()` 返回视为已保存。网址来源属于浏览器页眉页脚，提供关闭提示，不保证所有系统打印界面都可由 CSS 控制。
 - 等待字体、图片与分页完成再调用打印，保留失败、超时、取消、重试和重复点击处理。
-- PDF 建议文件名取左上角简历名称，经 `getPrintTitle` 清理后使用；主页面和打印页标题都要设置，清理时恢复主页面原标题和焦点。
+- 主页面标题在编辑期间持续跟随左上角简历名称，经 `getPrintTitle` 清理后使用，不能仅在点击打印时临时设置。原生分享 / 打印可能提前缓存标题，或在 `afterprint` 提前触发后再读取；打印页也设置同样标题，清理时恢复编辑页标题和焦点。
+- Chromium 的 `page.pdf()` 和手机 UA 模拟不能验证 iOS Safari 系统打印的文件名或页脚。回归应分别检查调用前的页面标题、重命名、提前回调、输出 PDF 的 Title 元数据；实际 iOS 文件需单独检查。不得把零页边距的 Chromium 测试通过表述为所有手机都不会带来源网址。
 - `afterprint` 也会在取消时触发，不能据此提示“文件已保存”。
 - 浏览器打印的 PDF 用于投递与分享；JSON 用于完整恢复。继续兼容旧版带简历 JSON 附件的 PDF。
 - 静态部署保持 `base: "./"`，新增资源或打印链接使用 `import.meta.env.BASE_URL` 等适合子路径的方式构造。
@@ -116,7 +119,7 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 
 - 代码修改通常运行 `pnpm check` 和 `pnpm build`；纯文档修改只需检查排版、命令及本地资源引用。
 - 数据、导入、日期或纯函数修改，运行对应单元测试，按需补充能覆盖实际行为的回归用例。
-- 分页、模板、字体或打印修改，构建后运行 `pnpm test:print` 和 `pnpm test:mobile-print`；排版交互按需运行 `pnpm test:layout`、`pnpm test:templates`、`pnpm test:preview`。
+- 分页、模板、字体或打印修改，构建后运行 `pnpm test:print` 和 `pnpm test:mobile-print`；排版交互按需运行 `pnpm test:layout`、`pnpm test:templates`（覆盖全部预设、JSON 恢复、撤销、窄屏与可搜索 PDF）、`pnpm test:preview`。
 - 通用交互组件优先复用 `src/shared/ui` 的 Button、IconButton、Modal、ConfirmDialog、Disclosure、ChoiceGroup 和 Notice；互斥选项保留 radio 语义，图标按钮提供可访问名称。
 - 修改共享控件时运行 `pnpm test:ui`，覆盖折叠、键盘选择、滑块、弹窗焦点恢复和通知，并检查桌面 / 窄屏的深浅色显示。独立 UI 测试需提供与应用一致的 Radix Theme 环境。
 - 下拉框或日期选择器修改运行 `pnpm test:select`，验证年份边界、日期联动、键盘与浮层交互。

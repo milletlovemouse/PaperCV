@@ -87,6 +87,17 @@ try {
           );
           await client.detach();
         }
+        await page.getByRole("button", { name: "小留白（8 mm）", exact: true }).click();
+        const pageMargin = page.getByRole("slider", { name: "页边距", exact: true });
+        assert.equal(await pageMargin.getAttribute("aria-valuenow"), "8");
+        await pageMargin.press("Home");
+        assert.equal(await pageMargin.getAttribute("aria-valuenow"), "6");
+        await page.waitForFunction(() => document.documentElement.dataset.pdfReady === "true");
+        const padding = await page
+          .locator(".preview-panel .paper-page")
+          .first()
+          .evaluate((node) => parseFloat(getComputedStyle(node).paddingLeft));
+        assert.ok(Math.abs(padding - (6 * 96) / 25.4) < 1, "preview uses the same compact margin");
         const pageNumbers = page.getByRole("switch", { name: "显示页码", exact: true });
         await pageNumbers.focus();
         const initiallyChecked = await pageNumbers.getAttribute("aria-checked");

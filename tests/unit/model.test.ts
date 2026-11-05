@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { blankResume, LAYOUT_DEFAULTS, normalizeResume, TEMPLATE_IDS } from "../../shared/resume/model";
 import { partitionSections, templates } from "../../shared/resume/templates";
+import { verticalPageMargin } from "../../src/features/preview/lib/paper";
 import { identifyHeading, parseResumeText } from "../../src/features/import/lib/import-text";
 
 test("resume validation rejects incompatible and oversized documents", () => {
@@ -22,7 +23,7 @@ test("untrusted settings are clamped and remote avatars are discarded", () => {
   raw.style.accent = 'red"; background:url(https://example.com)';
   const r = normalizeResume(raw);
   assert.equal(r.style.fontSize, 16);
-  assert.equal(r.style.margin, 10);
+  assert.equal(r.style.margin, 6);
   assert.equal(r.style.lineHeight, 1.65);
   assert.equal(r.profile.avatar, "");
   assert.equal(r.style.accent, "#34584b");
@@ -108,5 +109,18 @@ test("layout overrides validate, round trip and default safely for old documents
   }
   for (const [key, expected] of Object.entries(LAYOUT_DEFAULTS)) {
     assert.equal(normalizeResume(old).style[key as keyof typeof LAYOUT_DEFAULTS], expected);
+  }
+});
+
+test("compact margins survive JSON round trips without changing existing page spacing", () => {
+  for (const template of TEMPLATE_IDS) {
+    for (const margin of [6, 8, 10, 17, 25]) {
+      const resume = blankResume();
+      resume.style.template = template;
+      resume.style.margin = margin;
+      assert.equal(normalizeResume(JSON.parse(JSON.stringify(resume))).style.margin, margin);
+      const expectedVertical = template === "classic" && margin >= 10 ? Math.max(10, margin - 1) : margin;
+      assert.equal(verticalPageMargin(resume.style), expectedVertical);
+    }
   }
 });

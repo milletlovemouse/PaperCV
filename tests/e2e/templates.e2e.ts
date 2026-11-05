@@ -7,6 +7,11 @@ import { renderPDF } from "../helpers/print";
 import { chromium } from "playwright-core";
 import { STORAGE_KEY, type Resume } from "../../shared/resume/model";
 import { templates } from "../../shared/resume/templates";
+import {
+  applyTemplatePreset,
+  getSelectedTemplatePreset,
+  templatePresets,
+} from "../../shared/resume/template-presets";
 import { sampleResume } from "../../src/features/editor/data/sample";
 
 const output = path.resolve("output/qa/templates");
@@ -98,27 +103,38 @@ try {
   await page.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
   await load(sample);
   await page.getByRole("radio", { name: "模板", exact: true }).click();
-  assert.equal(await page.locator(".template-gallery .template-card").count(), 6);
+  assert.equal(await page.locator(".template-gallery .template-card").count(), templatePresets.length);
   await page.screenshot({ path: path.join(output, "gallery.png") });
   await page
     .getByRole("radiogroup", { name: "模板布局筛选", exact: true })
     .getByRole("radio", { name: "双栏", exact: true })
     .click();
-  assert.equal(await page.locator(".template-gallery .template-card").count(), 1);
+  assert.equal(
+    await page.locator(".template-gallery .template-card").count(),
+    templatePresets.filter((preset) => preset.category === "columns").length,
+  );
   await page.getByRole("radio", { name: "内容", exact: true }).click();
   await page.getByRole("radio", { name: "模板", exact: true }).click();
-  assert.equal(await page.locator(".template-gallery .template-card").count(), 1);
+  assert.equal(
+    await page.locator(".template-gallery .template-card").count(),
+    templatePresets.filter((preset) => preset.category === "columns").length,
+  );
   await page
     .getByRole("radiogroup", { name: "模板布局筛选", exact: true })
     .getByRole("radio", { name: "全部", exact: true })
     .click();
-  for (const template of templates) {
+  await page.getByText("已保存到本机", { exact: true }).waitFor({ state: "attached" });
+  const initialSections = await page.evaluate(
+    (key) => JSON.parse(localStorage.getItem(key)!).sections,
+    STORAGE_KEY,
+  );
+  for (const template of templatePresets) {
     await page.getByRole("radio", { name: `选择${template.name}模板`, exact: true }).click();
     await page.waitForFunction(
       (id) =>
         !!document.querySelector(`.preview-scroll .template-${id}`) &&
         document.documentElement.dataset.pdfReady === "true",
-      template.id,
+      template.template,
     );
     await assertGeometry();
     if (template.id === "sidebar") {
@@ -171,10 +187,23 @@ try {
       .first()
       .screenshot({ path: path.join(output, `${template.id}.png`) });
     await page.waitForFunction(
-      ({ key, id }) => JSON.parse(localStorage.getItem(key) || "{}").style?.template === id,
-      { key: STORAGE_KEY, id: template.id },
+      ({ key, expected }) => {
+        const style = JSON.parse(localStorage.getItem(key) || "{}").style;
+        return style && Object.entries(expected).every(([key, value]) => style[key] === value);
+      },
+      { key: STORAGE_KEY, expected: template.defaults },
     );
     const resume: Resume = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+    assert.deepEqual(resume.style, applyTemplatePreset(sample.style, template.id));
+    assert.deepEqual(resume.profile, sample.profile);
+    assert.deepEqual(resume.sections, initialSections);
+    assert.equal(getSelectedTemplatePreset(resume.style)?.id, template.id);
+    assert.equal(
+      await page
+        .getByRole("radio", { name: `选择${template.name}模板`, exact: true })
+        .getAttribute("aria-checked"),
+      "true",
+    );
     const exported = await exportPDF(resume, template.id);
     assert.equal(exported.pages, await page.locator(".preview-scroll .paper-page").count());
     results.push({ template: template.id, pages: exported.pages });
@@ -182,6 +211,42 @@ try {
       `PASS ${template.name}: gallery, geometry, searchable PDF, no data attachment (${exported.pages} pages)`,
     );
   }
+  // Restored JSON identifies the selected preset without a new storage field.
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
+  assert.equal(
+    await page.getByRole("radio", { name: "选择黑白速览模板", exact: true }).getAttribute("aria-checked"),
+    "true",
+  );
+  const customized = structuredClone(sample);
+  customized.style = {
+    ...applyTemplatePreset(sample.style, "academic-serif"),
+    accent: "#123456",
+    paper: "letter",
+    showPageNumbers: false,
+  };
+  await load(customized);
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
+  assert.match(await page.locator(".active-template-detail").innerText(), /已自定义/);
+  await page.getByRole("radio", { name: "选择商务蓝调模板", exact: true }).click();
+  await page.waitForFunction(
+    ({ key }) => JSON.parse(localStorage.getItem(key) || "{}").style?.accent === "#334e68",
+    { key: STORAGE_KEY },
+  );
+  const switched: Resume = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+  assert.deepEqual(switched.style, applyTemplatePreset(customized.style, "business-blue"));
+  await page.keyboard.press("ControlOrMeta+z");
+  await page.getByText("当前 · 人文书写 · 已自定义", { exact: true }).waitFor();
+  await page.waitForFunction(
+    ({ key }) => JSON.parse(localStorage.getItem(key) || "{}").style?.accent === "#123456",
+    { key: STORAGE_KEY },
+  );
+  const undone: Resume = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);
+  assert.deepEqual(undone.style, customized.style);
+  console.log(
+    "PASS preset JSON restore, custom appearance, complete style reset, retained paper/page-number preferences and undo",
+  );
+
   const sidebar = {
     ...sample,
     style: {
@@ -252,9 +317,9 @@ try {
   console.log(
     `PASS independent two-column pagination and JSON round trip (${exported.pages} pages, no missing or repeated text)`,
   );
-  for (const template of templates) {
+  for (const template of templatePresets) {
     const sparse = structuredClone(sample);
-    sparse.style = { ...sparse.style, ...template.defaults, template: template.id, paper: "letter" };
+    sparse.style = { ...applyTemplatePreset(sparse.style, template.id), paper: "letter" };
     sparse.profile = {
       ...sparse.profile,
       role: "",
@@ -271,6 +336,7 @@ try {
     sparse.sections[0].entries[0].location = "";
     sparse.sections[0].entries[0].start = "2022.07";
     sparse.sections[0].entries[0].end = "2026.11";
+    sparse.sections[0].entries[0].url = "https://example.com/portfolio";
     await load(sparse);
     await assertGeometry();
     const containment = await page
@@ -288,8 +354,56 @@ try {
       });
     assert.equal(containment.avatar, true, `${template.id}: avatar overlaps the following section`);
     assert.equal(containment.date, true, `${template.id}: date overflows its entry`);
+    assert.equal(
+      await page.locator('.preview-scroll .paper-page a[href="https://example.com/portfolio"]').count(),
+      1,
+    );
   }
-  console.log("PASS all six Letter layouts contain avatars and wrapped dates with minimal profile data");
+  console.log(
+    "PASS all 36 Letter presets contain avatars, wrapped dates and related links with minimal profile data",
+  );
+  for (const id of [
+    "modern-creative",
+    "editorial-portfolio",
+    "sidebar-card",
+    "sidebar-light",
+    "compact-campus",
+  ]) {
+    const portrait = structuredClone(sample);
+    portrait.style = applyTemplatePreset(portrait.style, id);
+    portrait.profile.avatar =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
+    portrait.sections[1].entries[0].url = "https://example.com/portfolio";
+    await load(portrait);
+    await assertGeometry();
+    const overlaps = await page.locator(".preview-scroll .resume-identity").evaluateAll((nodes) =>
+      nodes.flatMap((node) => {
+        const avatar = node.querySelector(".resume-avatar")!.getBoundingClientRect();
+        const parts = [...node.querySelectorAll(".resume-name, .resume-role, .contact-item")];
+        return parts
+          .filter((part) => {
+            const box = part.getBoundingClientRect();
+            return (
+              box.width &&
+              box.height &&
+              box.left < avatar.right - 1 &&
+              box.right > avatar.left + 1 &&
+              box.top < avatar.bottom - 1 &&
+              box.bottom > avatar.top + 1
+            );
+          })
+          .map((part) => part.textContent);
+      }),
+    );
+    assert.deepEqual(overlaps, [], `${id}: photo overlaps full profile data`);
+    await page
+      .locator(".preview-scroll .paper-page")
+      .first()
+      .screenshot({ path: path.join(output, `${id}-portrait.png`) });
+  }
+  console.log(
+    "PASS decorated headers and round/circle photos contain full contact information without overlap",
+  );
   for (const templateId of ["sidebar", "timeline"] as const) {
     for (const [dateFormat, fontSize, paper, entryPriority] of [
       ["numeric", 16, "a4", "time"],
@@ -357,6 +471,50 @@ try {
   await load(sidebar);
   await page.getByRole("radio", { name: "模板", exact: true }).click();
   await page.screenshot({ path: path.join(output, "editor-sidebar.png") });
+  for (const theme of ["light", "dark"] as const) {
+    const mobile = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      isMobile: true,
+      hasTouch: true,
+      colorScheme: theme,
+    });
+    try {
+      await mobile.addInitScript(({ key, sample }) => localStorage.setItem(key, JSON.stringify(sample)), {
+        key: STORAGE_KEY,
+        sample,
+      });
+      const phone = await mobile.newPage();
+      phone.on("pageerror", (error) => errors.push(error.message));
+      await phone.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
+      await phone.getByRole("radio", { name: "模板", exact: true }).click();
+      assert.equal(await phone.locator(".template-gallery .template-card").count(), templatePresets.length);
+      for (const [name, category] of [
+        ["单栏", "single"],
+        ["双栏", "columns"],
+        ["紧凑", "compact"],
+      ] as const) {
+        await phone
+          .getByRole("radiogroup", { name: "模板布局筛选", exact: true })
+          .getByRole("radio", { name, exact: true })
+          .click();
+        assert.equal(
+          await phone.locator(".template-gallery .template-card").count(),
+          templatePresets.filter((preset) => preset.category === category).length,
+        );
+      }
+      await phone.getByRole("radio", { name: "选择一页求职模板", exact: true }).click();
+      await phone.waitForFunction(
+        () =>
+          document.documentElement.dataset.pdfReady === "true" &&
+          !!document.querySelector(".preview-scroll .template-compact"),
+      );
+      assert.equal(await phone.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+      await phone.screenshot({ path: path.join(output, `gallery-mobile-${theme}.png`) });
+    } finally {
+      await mobile.close();
+    }
+  }
+  console.log("PASS 36 preset cards and category filters on mobile in light/dark themes");
   assert.deepEqual(errors, []);
   await writeFile(
     path.join(output, "results.json"),
