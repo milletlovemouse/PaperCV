@@ -32,7 +32,7 @@ try {
         ...template.defaults,
         template: template.id,
         showPageNumbers: true,
-        margin: index % 2 ? 6 : 8,
+        margin: [17, 13, 8, 6, 15, 10][index],
         paper: index % 2 ? "letter" : "a4",
       };
       await context.addInitScript(
@@ -83,21 +83,41 @@ try {
         .evaluate((image) => (image as HTMLImageElement).decode());
       assert.equal(
         await page.title(),
-        getPrintTitle(resume.title),
-        "the title is already correct before any export or browser-menu print",
+        "纸简 PaperCV · 简历编辑器",
+        "editing keeps the website title before any export",
       );
       resume.title = `手机:改名/${template.name}`;
       await page.getByLabel("简历名称", { exact: true }).fill(resume.title);
       const expectedTitle = getPrintTitle(resume.title);
-      await page.waitForFunction((title) => document.title === title, expectedTitle);
-      const previousTitle = expectedTitle;
+      const previousTitle = "纸简 PaperCV · 简历编辑器";
+      assert.equal(await page.title(), previousTitle, "renaming the resume does not change the editor title");
       await page.getByLabel("姓名", { exact: true }).fill(`最新手机快照${index}`);
       await page.waitForFunction(() => document.documentElement.dataset.pdfReady === "true");
       const saved = await page.evaluate((key) => localStorage.getItem(key), STORAGE_KEY);
+      const expectedNameSize = await page
+        .locator(".preview-panel .resume-name")
+        .first()
+        .evaluate((node) => (parseFloat(getComputedStyle(node).fontSize) * 72) / 96);
       const requests: string[] = [];
       const recordRequest = (request: { url: () => string }) => requests.push(request.url());
       context.on("request", recordRequest);
       const exportButton = page.getByRole("button", { name: "导出 PDF", exact: true });
+      // A wider mobile layout must not make the browser shrink the entire printed document.
+      // Preserve an existing custom property as well as the normal viewport when cleaning up.
+      const previousWidth = index % 2 ? "301px" : "";
+      await page.evaluate((previousWidth) => {
+        if (previousWidth)
+          document.documentElement.style.setProperty(
+            "--current-print-page-width",
+            previousWidth,
+            "important",
+          );
+        const stress = document.createElement("style");
+        stress.dataset.printWidthStress = "true";
+        stress.textContent =
+          "@media print { html, body { width: 1200px; min-width: 1200px; max-width: 1200px; } }";
+        document.head.append(stress);
+      }, previousWidth);
       await exportButton.click();
       await page.waitForFunction(() => document.documentElement.dataset.currentPrint === "true");
       const calls = await page.evaluate(
@@ -134,6 +154,21 @@ try {
         `最新手机快照${index}`,
         "print snapshot does not follow later edits",
       );
+      await page.emulateMedia({ media: "print" });
+      const widths = await page.evaluate(() =>
+        [
+          document.documentElement,
+          document.body,
+          ...document.querySelectorAll(
+            ".current-print-document, .current-print-document > .resume-preview, .current-print-document .paper-stack, .current-print-document .paper-wrap",
+          ),
+        ].map((node) => node.getBoundingClientRect().width),
+      );
+      const expectedWidth = ((resume.style.paper === "a4" ? 210 : 215.9) * 96) / 25.4;
+      assert.ok(
+        widths.every((width) => Math.abs(width - expectedWidth) < 1),
+        `print ancestors use physical paper width: ${widths}`,
+      );
       // PDF generation also exercises beforeprint/afterprint, including cleanup.
       const bytes = await page.pdf({
         preferCSSPageSize: true,
@@ -158,6 +193,10 @@ try {
         Math.abs(name.transform[4] - (resume.style.margin * 72) / 25.4) < 2,
         "PDF content keeps the configured margin without another website inset",
       );
+      assert.ok(
+        Math.abs(Math.abs(name.transform[0]) - expectedNameSize) < 0.2,
+        "PDF text keeps its preview font size rather than shrinking the whole page",
+      );
       let text = "";
       for (let n = 1; n <= parsed.numPages; n++)
         text += (await (await parsed.getPage(n)).getTextContent()).items
@@ -173,6 +212,19 @@ try {
       assert.doesNotMatch(text, /https?:|localhost|127\.0\.0\.1|MAKE YOUR NEXT MOVE|添加简历模块/);
       await page.locator(".current-print-document").waitFor({ state: "detached" });
       assert.equal(await page.title(), previousTitle);
+      assert.equal(
+        await page.evaluate(() =>
+          document.documentElement.style.getPropertyValue("--current-print-page-width"),
+        ),
+        previousWidth,
+      );
+      assert.equal(
+        await page.evaluate(() =>
+          document.documentElement.style.getPropertyPriority("--current-print-page-width"),
+        ),
+        previousWidth ? "important" : "",
+      );
+      await page.emulateMedia({ media: "screen" });
       assert.equal(await page.getByLabel("姓名", { exact: true }).inputValue(), `打印后的编辑${index}`);
       assert.ok(saved, "saved resume is preserved");
       await page.evaluate(() => {
@@ -191,8 +243,8 @@ try {
       );
       assert.deepEqual(
         await page.evaluate(() => (window as unknown as { delayedTitles: string[] }).delayedTitles),
-        [expectedTitle, expectedTitle],
-        "an early afterprint does not restore the site name before native code reads the title",
+        [previousTitle, previousTitle],
+        "even an early afterprint restores the website title when the print session ends",
       );
       if (index === 0) {
         await page.evaluate(() => {
@@ -215,6 +267,7 @@ try {
           .getByText(/浏览器无法调用打印/)
           .waitFor();
         assert.equal(await page.locator(".current-print-document").count(), 0);
+        assert.equal(await page.title(), previousTitle, "failed printing restores the website title");
         await page.getByRole("button", { name: "关闭提示", exact: true }).click();
         await page.evaluate(() => {
           (window as unknown as { printMode: string }).printMode = "finish";
@@ -224,7 +277,7 @@ try {
       }
       assert.deepEqual(errors, []);
       console.log(
-        `PASS ${template.id}: synchronous mobile call (${calls[0].elapsed.toFixed(1)}ms), no new requests, searchable PDF metadata, persistent title, early-afterprint and retry`,
+        `PASS ${template.id}: synchronous mobile call (${calls[0].elapsed.toFixed(1)}ms), no new requests, searchable PDF metadata, temporary title with restore, early-afterprint and retry`,
       );
     } finally {
       await context.close();

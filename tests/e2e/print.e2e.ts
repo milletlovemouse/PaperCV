@@ -40,6 +40,10 @@ try {
   await page.goto(site.url, { waitUntil: "networkidle" });
   const originalTitle = await page.title();
   await page.waitForFunction(() => document.documentElement.dataset.pdfReady === "true");
+  assert.equal(originalTitle, "纸简 PaperCV · 简历编辑器", "The editor keeps the website title");
+  resume.title = "桌面改名导出测试";
+  await page.getByLabel("简历名称", { exact: true }).fill(resume.title);
+  assert.equal(await page.title(), originalTitle, "Renaming a resume does not change the editor title");
   await page.getByLabel("姓名", { exact: true }).fill("即时编辑快照");
   await page.getByRole("button", { name: "导出 PDF", exact: true }).click();
   const frame = page.frameLocator('iframe[title="简历打印"]');
@@ -171,6 +175,7 @@ try {
     .getByText("简历打印排版失败，请检查内容或图片后重试", { exact: true })
     .waitFor();
   assert.equal(await failedPage.locator('iframe[title="简历打印"]').count(), 0);
+  assert.equal(await failedPage.title(), originalTitle, "Print preparation errors restore the website title");
   assert.equal(await failedPage.getByRole("button", { name: "导出 PDF", exact: true }).isEnabled(), true);
   await failedPage.getByRole("button", { name: "导入简历", exact: true }).click();
   await failedPage.locator('input[type="file"][accept*=".pdf"]').setInputFiles({

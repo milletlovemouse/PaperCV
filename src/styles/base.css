@@ -1942,7 +1942,18 @@ input[type="file"] {
   html[data-current-print="true"] .current-print-document {
     display: block !important;
   }
-  html[data-current-print="true"] body {
+  html[data-current-print="true"],
+  html[data-current-print="true"] body,
+  html[data-current-print="true"] .current-print-document,
+  html[data-current-print="true"] .current-print-document > .resume-preview,
+  html[data-current-print="true"] .current-print-document .paper-stack,
+  html[data-current-print="true"] .current-print-document .paper-wrap {
+    width: var(--current-print-page-width) !important;
     min-width: 0 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    zoom: 1 !important;
+    transform: none !important;
   }
 }

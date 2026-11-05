@@ -1,6 +1,6 @@
 import { Theme } from "@radix-ui/themes";
 import { PanelLeftClose } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { blankResume } from "@resume/model";
 import type { TemplateCategory } from "@resume/templates";
 import EditorHeader from "@/features/editor/components/EditorHeader";
@@ -20,7 +20,6 @@ import type { Confirmation, EditorTab } from "@/features/editor/types";
 import ImportDialog from "@/features/import/components/ImportDialog";
 import { useResumeTransfer } from "@/features/import/hooks/useResumeTransfer";
 import PreviewPanel from "@/features/preview/components/PreviewPanel";
-import { getPrintTitle } from "@/features/preview/lib/print-title";
 import { useFitOnePage } from "@/features/preview/hooks/useFitOnePage";
 import { usePreviewLayout } from "@/features/preview/hooks/usePreviewLayout";
 import { useTheme } from "@/shared/hooks/useTheme";
@@ -29,11 +28,6 @@ import { ConfirmDialog, IconButton, Notice } from "@/shared/ui";
 export default function App() {
   const { theme, setTheme } = useTheme();
   const { resume, update, undo, redo, canUndo, canRedo } = useResumeHistory(loadResume);
-  useLayoutEffect(() => {
-    // Native mobile share/print can read the tab title before or after our print callback.
-    // Keep it correct throughout editing, including when printing from the browser menu.
-    document.title = getPrintTitle(resume.title);
-  }, [resume.title]);
   const [tab, setTab] = useState<EditorTab>("content");
   const [templateFilter, setTemplateFilter] = useState<"all" | TemplateCategory>("all");
   const [active, setActive] = useState("profile");

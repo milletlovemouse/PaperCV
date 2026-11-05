@@ -1,4 +1,5 @@
 import { getPrintTitle } from "../lib/print-title";
+import { paperSize } from "../lib/paper";
 import type { Resume } from "@resume/model";
 
 export type PrintResult = "requested" | "unavailable";
@@ -33,6 +34,10 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
   host.className = "current-print-document";
   host.setAttribute("aria-hidden", "true");
   host.append(snapshot);
+  const rootStyle = document.documentElement.style;
+  const widthProperty = "--current-print-page-width";
+  const previousWidth = rootStyle.getPropertyValue(widthProperty);
+  const previousWidthPriority = rootStyle.getPropertyPriority(widthProperty);
   const previousTitle = document.title;
   const previousFocus = document.activeElement;
   let started = false;
@@ -60,6 +65,8 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
     printMedia.removeEventListener("change", mediaChanged);
     host.remove();
     delete document.documentElement.dataset.currentPrint;
+    if (previousWidth) rootStyle.setProperty(widthProperty, previousWidth, previousWidthPriority);
+    else rootStyle.removeProperty(widthProperty);
     document.title = previousTitle;
     onDispose();
     if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
@@ -89,6 +96,8 @@ export function printCurrentResume(resume: Resume, onDispose: () => void): Promi
   printMedia.addEventListener("change", mediaChanged);
   document.title = getPrintTitle(resume.title);
   document.body.append(host);
+  // Size the whole print document, not just the sheet inside a narrow mobile viewport.
+  rootStyle.setProperty(widthProperty, `${paperSize(resume.style.paper).width}mm`);
   document.documentElement.dataset.currentPrint = "true";
   try {
     // Keep this synchronous: awaiting font loading or an iframe loses the original tap on mobile.
