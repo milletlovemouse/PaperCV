@@ -99,7 +99,7 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 
 - `.github/workflows/ci-pages.yml` 在推送到 `main`、向 `main` 提交 PR 和手动触发时运行检查与构建。
 - CI 使用 Node.js 22，pnpm 版本取自 `package.json` 的 `packageManager`，通过 `pnpm-lock.yaml` 缓存依赖并执行冻结锁文件安装。
-- `build` 执行 `pnpm check` 和 `pnpm build`；仅 `main` 的非 PR 运行上传 `dist/` 并触发部署，PR 不发布站点。
+- `build` 执行 `pnpm check` 和 `pnpm build`；仅 `main` 的非 PR 运行上传 `dist/` 并触发部署，PR 不发布站点。Pages 上传使用 `actions/upload-pages-artifact@v5`，首次失败后等待 10 秒重试一次；第二次失败必须使构建失败，不能跳过上传继续部署。
 - `deploy` 依赖构建成功，通过官方 Pages Actions 部署到 `github-pages` 环境；部署权限仅授予该 job。
 - 首次使用时，在 GitHub 仓库的 Settings → Pages → Build and deployment 中将 Source 设置为 GitHub Actions。
 - 部署沿用相对资源路径，不硬编码仓库名称或 Pages 域名。修改默认分支时同步更新触发条件和部署判断。

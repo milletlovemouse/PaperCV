@@ -49,8 +49,20 @@ jobs:
         run: pnpm build
 
       - name: Upload Pages artifact
+        id: upload-pages
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v4
+        continue-on-error: true
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+      - name: Wait before retrying Pages upload
+        if: steps.upload-pages.outcome == 'failure'
+        run: sleep 10
+
+      - name: Retry Pages artifact upload
+        if: steps.upload-pages.outcome == 'failure'
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
