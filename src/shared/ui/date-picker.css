@@ -1,0 +1,179 @@
+.radix-themes .date-field > label {
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.date-field .react-datepicker-wrapper,
+.date-field .react-datepicker__input-container {
+  width: 100%;
+}
+.date-field .react-datepicker__input-container .rt-TextFieldSlot {
+  color: var(--ui-muted);
+  padding-right: 10px;
+}
+.calendar-trigger {
+  display: grid;
+  place-items: center;
+  padding: 3px;
+  color: inherit;
+  border-radius: 3px;
+}
+.calendar-trigger:hover:not(:disabled) {
+  color: var(--ui-text);
+  background: var(--ui-hover);
+}
+.calendar-trigger:focus-visible {
+  outline: 2px solid var(--ui-focus);
+}
+.date-field .react-datepicker__input-container .rt-TextFieldInput {
+  padding-right: 0;
+}
+.date-field .react-datepicker__input-container:has(.react-datepicker__close-icon) .rt-TextFieldSlot {
+  padding-right: 31px;
+}
+.date-field .react-datepicker__close-icon {
+  width: 30px;
+  padding: 0 7px;
+}
+.date-field .react-datepicker__close-icon::after {
+  background: transparent;
+  color: var(--ui-muted);
+  font-size: 18px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+}
+.date-field .react-datepicker__close-icon:hover::after {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.date-field > .date-field-error {
+  color: #c55;
+}
+.papercv-calendar-popper {
+  z-index: 100;
+}
+.papercv-calendar {
+  font-family:
+    Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "PingFang SC",
+    "Microsoft YaHei",
+    sans-serif;
+  font-size: 12px;
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px var(--ui-shadow);
+  overflow: hidden;
+  padding: 6px;
+  width: 280px;
+}
+.papercv-calendar .react-datepicker__month-container {
+  float: none;
+  width: 100%;
+}
+.papercv-calendar .react-datepicker__header {
+  background: transparent;
+  border-color: var(--ui-border);
+  padding: 4px 2px 8px;
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.calendar-header > button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 30px;
+  border-radius: 5px;
+  color: var(--ui-muted);
+}
+.calendar-header > button:hover:not(:disabled) {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.calendar-header-selects {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+.calendar-header select {
+  background: var(--ui-surface);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+  font: inherit;
+  font-weight: 500;
+  padding: 5px 7px;
+  cursor: pointer;
+  min-width: 86px;
+}
+.papercv-calendar .react-datepicker__month {
+  margin: 8px 0 2px;
+}
+.papercv-calendar .react-datepicker__month-wrapper {
+  display: flex;
+  gap: 6px;
+  padding: 2px;
+}
+.papercv-calendar .react-datepicker__month-text {
+  display: inline-grid;
+  place-items: center;
+  flex: 1;
+  width: auto;
+  height: 38px;
+  margin: 2px 0;
+  color: var(--ui-text);
+  background: transparent;
+  border-radius: 5px;
+}
+.papercv-calendar .react-datepicker__day,
+.papercv-calendar .react-datepicker__day-name {
+  width: 32px;
+  line-height: 32px;
+  margin: 2px;
+  color: var(--ui-text);
+  border-radius: 5px;
+}
+.papercv-calendar .react-datepicker__day-name {
+  color: var(--ui-muted);
+  font-size: 11px;
+}
+.papercv-calendar .react-datepicker__day--outside-month {
+  color: var(--ui-faint);
+}
+.papercv-calendar
+  :is(.react-datepicker__month-text, .react-datepicker__day):hover:not([aria-disabled="true"]) {
+  background: var(--ui-hover);
+  color: var(--ui-text);
+}
+.papercv-calendar
+  :is(.react-datepicker__month-text--keyboard-selected, .react-datepicker__day--keyboard-selected) {
+  background: var(--ui-selected);
+  color: var(--ui-text);
+}
+.papercv-calendar :is(.react-datepicker__month-text--selected, .react-datepicker__day--selected),
+.papercv-calendar :is(.react-datepicker__month-text--selected, .react-datepicker__day--selected):hover {
+  background: var(--ui-primary);
+  color: var(--ui-on-primary);
+  font-weight: 600;
+}
+.papercv-calendar [aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.papercv-calendar :is(button, select, [role="option"]):focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: -2px;
+}
+@media print {
+  #papercv-date-picker-portal {
+    display: none !important;
+  }
+}

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="description" content="纸简 PaperCV — 专注内容的简历编辑器，实时预览、PDF 导入与导出。" />
+    <title>纸简 PaperCV · 简历编辑器</title>
+    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
+    <script>
+      try {
+        const savedTheme = localStorage.getItem("papercv.theme");
+        document.documentElement.dataset.theme =
+          new URLSearchParams(location.search).has("print") || location.pathname === "/print"
+            ? "light"
+            : savedTheme === "dark" || savedTheme === "light"
+              ? savedTheme
+              : matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

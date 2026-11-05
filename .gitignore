@@ -1,0 +1,46 @@
+# Dependencies and build output
+node_modules/
+/dist/
+*.tsbuildinfo
+.vite/
+
+# Generated PDFs, screenshots, debug data and reference-site captures
+/output/
+/tmp/
+/research/
+/coverage/
+/test-results/
+/playwright-report/
+
+# Local environment and credentials (keep shareable examples)
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.*.sample
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs and caches
+*.log
+.cache/
+__pycache__/
+*.py[cod]
+
+# OS and editor files
+.DS_Store
+._*
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+
+/backups/
+
+# Generated Husky hook launchers
+.husky/_/

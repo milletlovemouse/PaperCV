@@ -1,0 +1,590 @@
+/* Template geometry is shared by editor, measurement probes, thumbnails and
+   print. Spacing belongs inside units so isolated DOM measurements stay exact. */
+.resume-contact span::after {
+  content: none;
+}
+.resume-contact .contact-item > span::after {
+  content: none;
+}
+.resume-contact > .contact-item:not(:last-child)::after {
+  content: "|";
+  padding: 0 9px;
+  color: #b3bcb6;
+}
+.contact-label {
+  display: none;
+}
+.section-heading {
+  margin: 0;
+  padding: 12px 0 7px;
+}
+.entry-heading {
+  padding-top: 7px;
+  padding-bottom: 5px;
+}
+.summary-unit {
+  padding-top: 7px;
+  padding-bottom: 5px;
+}
+.resume-name {
+  overflow-wrap: anywhere;
+}
+.entry-first-row strong {
+  min-width: 0;
+}
+
+/* 01. Classic: centered identity and restrained, full-width section rules. */
+.template-classic .resume-identity {
+  padding-bottom: 17px;
+}
+.template-classic .section-heading {
+  border-bottom: 1px solid var(--accent);
+  font-weight: 650;
+}
+
+/* 02. Modern: two-part masthead with a right-hand contact block, tinted tabs. */
+.template-modern .resume-identity {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64mm;
+  align-items: start;
+  gap: 8mm;
+  padding: 0 0 22px;
+  margin: 0;
+  border: 0;
+  text-align: left;
+}
+.template-modern .resume-identity::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  height: 3px;
+  background: var(--accent);
+}
+.template-modern .resume-name {
+  font-size: 29px;
+  letter-spacing: 3px;
+  line-height: 1.3;
+  color: var(--accent);
+}
+.template-modern .resume-role {
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+.template-modern .resume-contact {
+  display: block;
+  text-align: right;
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.7;
+}
+.template-modern .contact-item {
+  display: block;
+  padding: 1px 0;
+}
+.template-modern .resume-contact > .contact-item::after {
+  content: none;
+}
+.template-modern .resume-identity:has(.resume-avatar) {
+  padding-left: 0;
+  padding-right: 21mm;
+  grid-template-columns: minmax(0, 1fr) 52mm;
+  min-height: 95px;
+}
+.template-modern .section-heading {
+  display: block;
+  padding: 5px 9px;
+  border: 0;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  color: var(--accent);
+  font-size: calc(var(--resume-font-size) + 0.5px);
+  letter-spacing: 1px;
+}
+.template-modern .section-heading::after {
+  content: none;
+}
+.template-modern .entry-spacer {
+  height: 10px;
+}
+.template-modern .summary-unit {
+  padding-top: 9px;
+  padding-bottom: 12px;
+}
+
+/* 03. Editorial: generous serif masthead and numbered chapter headings. */
+.template-editorial .resume-identity {
+  text-align: left;
+  padding-bottom: 17px;
+  min-height: 0;
+}
+.template-editorial .resume-identity:has(.resume-avatar) {
+  min-height: 90px;
+}
+.template-editorial .identity-main {
+  display: flex;
+  gap: 15px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.template-editorial .resume-name {
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: 4px;
+}
+.template-editorial .resume-role {
+  font-family: "Noto Sans SC Variable", sans-serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin: 0;
+}
+.template-editorial .resume-contact {
+  justify-content: flex-start;
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--accent);
+}
+.template-editorial .section-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  margin: 0;
+  padding: 14px 0 8px;
+  color: var(--accent);
+  letter-spacing: 2px;
+  font-size: calc(var(--resume-font-size) + 1.5px);
+  font-weight: 600;
+}
+.template-editorial .section-heading::before {
+  content: attr(data-number);
+  font-family: "Noto Sans SC Variable", sans-serif;
+  font-size: 9px;
+  letter-spacing: 1px;
+  opacity: 0.65;
+}
+.template-editorial .section-heading::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--accent);
+  opacity: 0.25;
+}
+.template-editorial .entry-first-row strong {
+  font-weight: 650;
+}
+.template-editorial .entry-date {
+  font-family: "Noto Sans SC Variable", sans-serif;
+  font-size: calc(var(--resume-font-size) - 2px);
+}
+.template-editorial .entry-spacer {
+  height: 10px;
+}
+
+/* 04. Real two-column flow. Each column owns its measured fragments, and
+   both columns advance to the same physical page without repeating text. */
+.template-sidebar .paper-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--page-margin) + var(--sidebar-width) + 4.5mm);
+  background: color-mix(in srgb, var(--accent) 7%, white);
+  border-top: 5px solid var(--accent);
+  pointer-events: none;
+}
+.sidebar-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  gap: var(--column-gap);
+  align-items: start;
+}
+.template-sidebar .measure-main {
+  width: calc(var(--paper-width) - var(--page-margin) * 2 - var(--sidebar-width) - var(--column-gap));
+}
+.template-sidebar .measure-sidebar {
+  width: var(--sidebar-width);
+}
+.template-sidebar .sidebar-document {
+  font-size: calc(var(--resume-font-size) - 0.5px);
+  color: #526258;
+}
+.template-sidebar .resume-identity,
+.template-sidebar .resume-identity:has(.resume-avatar) {
+  padding: 0 0 18px;
+  text-align: left;
+  min-height: 0;
+}
+.template-sidebar .resume-avatar {
+  position: static;
+  display: block;
+  width: 25mm;
+  height: 31mm;
+  margin-bottom: 14px;
+  border: 3px solid white;
+}
+.template-sidebar .resume-name {
+  font-size: 25px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  line-height: 1.5;
+}
+.template-sidebar .resume-role {
+  font-size: 11px;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+.template-sidebar .resume-contact {
+  display: block;
+  margin-top: 18px;
+  font-size: 9px;
+}
+.template-sidebar .contact-item {
+  display: block;
+  padding-bottom: 9px;
+}
+.template-sidebar .contact-label {
+  display: block;
+  color: #8a998d;
+  font-size: 8px;
+  letter-spacing: 1px;
+  margin-bottom: 1px;
+}
+.template-sidebar .resume-contact > .contact-item::after {
+  content: none;
+}
+.template-sidebar .section-heading {
+  border: 0;
+  padding: 11px 0 8px;
+  color: var(--accent);
+  font-size: calc(var(--resume-font-size) + 1px);
+  letter-spacing: 1.5px;
+}
+.template-sidebar .section-heading::after {
+  content: none;
+}
+.template-sidebar .main-document .section-heading {
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, white);
+  padding-top: 10px;
+  padding-bottom: 7px;
+}
+.template-sidebar .sidebar-document .entry-first-row,
+.template-sidebar .sidebar-document .entry-second-row {
+  display: block;
+}
+.template-sidebar .sidebar-document .entry-first-row strong {
+  font-size: var(--resume-font-size);
+}
+.template-sidebar .sidebar-document .entry-date {
+  display: block;
+  white-space: normal;
+  font-size: 9px;
+  padding-top: 3px;
+}
+.template-sidebar .sidebar-document .entry-second-row {
+  font-size: 9px;
+}
+.template-sidebar .sidebar-document .entry-second-row > span {
+  display: block;
+  padding-top: 2px;
+}
+.template-sidebar .sidebar-document .body-unit {
+  font-size: calc(var(--resume-font-size) - 1px);
+}
+.template-sidebar .main-document .entry-first-row {
+  flex-wrap: wrap;
+  gap: 1px 8px;
+}
+.template-sidebar .main-document .entry-date {
+  font-size: 9px;
+}
+.template-sidebar .main-document .entry-second-row {
+  font-size: calc(var(--resume-font-size) - 1px);
+  gap: 8px;
+}
+.template-sidebar .entry-spacer {
+  height: 9px;
+}
+
+/* 05. Timeline: actual date column with connected content track. */
+.template-timeline {
+  --timeline-inset: 29mm;
+  --timeline-line: 24mm;
+}
+.template-timeline .resume-identity {
+  text-align: left;
+  padding-bottom: 18px;
+}
+.template-timeline .resume-name {
+  font-size: 29px;
+  color: var(--accent);
+  letter-spacing: 3px;
+}
+.template-timeline .resume-role {
+  letter-spacing: 1px;
+}
+.template-timeline .resume-contact {
+  justify-content: flex-start;
+}
+.template-timeline .section-heading {
+  margin: 0;
+  padding: 13px 0 9px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, white);
+  font-size: calc(var(--resume-font-size) + 1px);
+  letter-spacing: 1.5px;
+}
+.template-timeline .entry-heading,
+.template-timeline .body-unit:not(.summary-unit),
+.template-timeline .entry-spacer {
+  background: linear-gradient(
+    to right,
+    transparent var(--timeline-line),
+    color-mix(in srgb, var(--accent) 30%, white) var(--timeline-line),
+    color-mix(in srgb, var(--accent) 30%, white) calc(var(--timeline-line) + 1px),
+    transparent calc(var(--timeline-line) + 1px)
+  );
+}
+.template-timeline .entry-heading {
+  display: grid;
+  grid-template-columns: 21mm minmax(0, 1fr);
+  column-gap: 8mm;
+  align-items: start;
+  padding: 10px 0 5px;
+}
+.template-timeline .entry-first-row {
+  display: contents;
+}
+.template-timeline .entry-first-row strong {
+  grid-column: 2;
+  grid-row: 1;
+}
+.template-timeline .entry-second-row {
+  grid-column: 2;
+  grid-row: 2;
+}
+.template-timeline .entry-heading::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: calc(var(--timeline-line) - 3px);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  outline: 3px solid white;
+}
+.template-timeline .entry-date {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  white-space: normal;
+  font-size: calc(var(--resume-font-size) - 1.5px);
+  line-height: 1.7;
+  color: #7a897e;
+}
+.template-timeline .body-unit:not(.summary-unit) {
+  padding-left: var(--timeline-inset);
+}
+.template-timeline .bullet-unit {
+  padding-left: calc(var(--timeline-inset) + 12px) !important;
+}
+.template-timeline .bullet-unit::before {
+  left: var(--timeline-inset);
+}
+.template-timeline .entry-spacer {
+  height: 11px;
+}
+
+/* 06. Compact: horizontal identity, tighter unit rhythm, dense entry rows. */
+.template-compact .resume-identity,
+.template-compact .resume-identity:has(.resume-avatar) {
+  padding-bottom: 10px;
+  min-height: 0;
+  text-align: left;
+}
+.template-compact .identity-main {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+}
+.template-compact .resume-name {
+  font-size: 25px;
+  letter-spacing: 3px;
+}
+.template-compact .resume-role {
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin: 0;
+  padding-left: 15px;
+  border-left: 1px solid #bbc6bd;
+}
+.template-compact .resume-contact {
+  justify-content: flex-start;
+  font-size: 9px;
+  margin-top: 7px;
+}
+.template-compact .section-heading {
+  padding: 8px 0 5px;
+  font-size: calc(var(--resume-font-size) + 0.5px);
+  border-bottom: 1px solid var(--accent);
+  letter-spacing: 0.5px;
+}
+.template-compact .entry-heading {
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+.template-compact .entry-second-row {
+  padding-top: 0;
+}
+.template-compact .body-unit {
+  padding-bottom: 2px;
+}
+.template-compact .summary-unit {
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+.template-compact .entry-spacer {
+  height: 4px;
+}
+.template-compact .resume-avatar {
+  width: 16mm;
+  height: 20mm;
+}
+.template-compact .resume-identity:has(.resume-avatar) {
+  padding-left: 0;
+  padding-right: 20mm;
+  min-height: calc(20mm + 10px);
+}
+
+/* Gallery: miniature renders use exactly the same document and column CSS. */
+.template-filters {
+  display: flex;
+  gap: 6px;
+  margin: -8px 0 17px;
+}
+.template-filters button {
+  flex: 1;
+  padding: 7px 6px;
+  border: 1px solid transparent;
+  color: #96a188;
+  font-size: 10px;
+  border-radius: 5px;
+}
+.template-filters .active {
+  background: #eaf0e2;
+  border-color: #dce5d2;
+  color: #688352;
+}
+.template-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 12px;
+}
+.template-gallery .template-card {
+  display: block;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 8px;
+}
+.template-thumbnail-frame {
+  height: 192px;
+  background: #f0f2ec;
+  padding: 12px 0 0;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.thumbnail-resume {
+  zoom: 0.15;
+  flex-shrink: 0;
+  height: var(--paper-height);
+}
+.thumbnail-resume .paper-page {
+  box-shadow: 0 1px 10px #25332012;
+}
+.template-gallery .template-info {
+  padding: 12px 11px 13px;
+  border-top: 1px solid #e8eddf;
+}
+.template-gallery .template-info > div {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.template-gallery .template-info strong {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+.template-gallery .template-info p {
+  font-size: 8px;
+  margin-top: 6px;
+  white-space: nowrap;
+}
+.template-label {
+  margin-left: auto;
+  color: #a5af99;
+  font-size: 8px;
+  font-weight: 400;
+}
+.template-gallery .template-check {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-color: #dce4d3;
+}
+.template-gallery .selected .template-check {
+  background: #829771;
+  border-color: #829771;
+}
+.active-template-detail {
+  margin-top: 18px;
+  padding: 13px;
+  border-radius: 7px;
+  background: #f1f5eb;
+  border: 1px solid #e5ecd9;
+}
+.active-template-detail > span {
+  font-size: 11px;
+  color: #768d61;
+  font-weight: 550;
+}
+.active-template-detail p {
+  font-size: 10px;
+  line-height: 1.9;
+  color: #98a788;
+  margin-top: 7px;
+}
+@media (max-width: 1150px) {
+  .template-thumbnail-frame {
+    height: 174px;
+    padding-top: 10px;
+  }
+  .thumbnail-resume {
+    zoom: 0.135;
+  }
+  .template-gallery {
+    gap: 11px 9px;
+  }
+  .template-gallery .template-info {
+    padding: 11px 9px;
+  }
+  .template-gallery .template-info strong {
+    font-size: 10px;
+  }
+  .template-gallery .template-info p {
+    font-size: 7px;
+  }
+}
+@media print {
+  .template-sidebar .paper-page::before {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

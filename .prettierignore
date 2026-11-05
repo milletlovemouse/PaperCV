@@ -1,0 +1,12 @@
+node_modules/
+dist/
+output/
+tmp/
+research/
+package-lock.json
+pnpm-lock.yaml
+coverage/
+test-results/
+playwright-report/
+
+/backups/
