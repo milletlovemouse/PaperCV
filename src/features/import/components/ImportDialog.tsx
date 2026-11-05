@@ -1,6 +1,6 @@
 import { ArrowRight, Check, FileDown, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useRef } from "react";
-import { Button, Modal } from "@/shared/ui";
+import { Button, Disclosure, Modal } from "@/shared/ui";
 import { type ImportResult } from "../lib/pdf-import";
 
 interface Props {
@@ -29,12 +29,18 @@ export default function ImportDialog({
       subtitle="导入 PDF 或 JSON，接着写下一步。"
       onClose={onClose}
       wide
+      busy={importing}
       footer={
         <>
           <Button className="button secondary" onClick={onClose} disabled={importing}>
             取消
           </Button>
-          <Button className="button primary" disabled={!importResult || importing} onClick={onConfirm}>
+          <Button
+            variant="solid"
+            className="button primary"
+            disabled={!importResult || importing}
+            onClick={onConfirm}
+          >
             确认导入
             <ArrowRight size={15} />
           </Button>
@@ -111,10 +117,9 @@ export default function ImportDialog({
             </span>
           </div>
           {importResult.text && (
-            <details>
-              <summary>查看提取文字</summary>
+            <Disclosure className="import-text-details" title="查看提取文字">
               <pre>{importResult.text}</pre>
-            </details>
+            </Disclosure>
           )}
         </div>
       )}

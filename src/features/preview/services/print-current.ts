@@ -1,0 +1,103 @@
+import { getPrintTitle } from "../lib/print-title";
+import type { Resume } from "@resume/model";
+
+export type PrintResult = "requested" | "unavailable";
+
+export function prefersCurrentDocumentPrint() {
+  return (
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+/** Reuse measured pages and loaded fonts; call print in the original tap, without an iframe. */
+export function printCurrentResume(resume: Resume, onDispose: () => void): Promise<PrintResult> {
+  const preview = document.querySelector<HTMLElement>(".preview-panel .resume-preview");
+  if (!preview || document.documentElement.dataset.pdfReady !== "true" || document.fonts.status === "loading")
+    return Promise.reject(new Error("简历正在排版，请稍候再点导出 PDF"));
+  const pages = preview.querySelectorAll(".paper-page");
+  if (!pages.length || pages.length > 60 || preview.querySelector(".pagination-error"))
+    return Promise.reject(new Error("简历打印排版失败，请检查内容或图片后重试"));
+  for (const image of preview.querySelectorAll<HTMLImageElement>(".paper-page img")) {
+    if (!image.complete) return Promise.reject(new Error("照片正在加载，请稍候再点导出 PDF"));
+    if (!image.naturalWidth) return Promise.reject(new Error("照片加载失败，请更换照片后重试"));
+  }
+  const snapshot = preview.cloneNode(true) as HTMLElement;
+  snapshot.classList.add("print-mode");
+  snapshot.querySelectorAll(".measure-shell, .paper-caption").forEach((node) => node.remove());
+  const host = document.createElement("div");
+  host.className = "current-print-document";
+  host.setAttribute("aria-hidden", "true");
+  host.append(snapshot);
+  const previousTitle = document.title;
+  const previousFocus = document.activeElement;
+  let started = false;
+  let disposed = false;
+  let idleTimer = 0;
+  let fallbackTimer = 0;
+  const printMedia = window.matchMedia("print");
+  let resolve!: (result: PrintResult) => void;
+  let reject!: (reason: Error) => void;
+  const result = new Promise<PrintResult>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  const cleanup = () => {
+    if (disposed) return;
+    disposed = true;
+    clearTimeout(idleTimer);
+    clearTimeout(fallbackTimer);
+    clearTimeout(watchdog);
+    window.removeEventListener("beforeprint", beforePrint);
+    window.removeEventListener("afterprint", finish);
+    window.removeEventListener("focus", returned);
+    window.removeEventListener("pagehide", finish);
+    document.removeEventListener("visibilitychange", returned);
+    printMedia.removeEventListener("change", mediaChanged);
+    host.remove();
+    delete document.documentElement.dataset.currentPrint;
+    document.title = previousTitle;
+    onDispose();
+    if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+  };
+  const beforePrint = () => {
+    started = true;
+    clearTimeout(fallbackTimer);
+  };
+  const finish = () => {
+    cleanup();
+    resolve(started ? "requested" : "unavailable");
+  };
+  const returned = () => {
+    if (started && document.visibilityState === "visible") idleTimer = window.setTimeout(finish, 0);
+  };
+  const mediaChanged = () => {
+    if (printMedia.matches) beforePrint();
+    else if (started) finish();
+  };
+  // Some mobile browsers never emit afterprint. Do not leave a stale snapshot or lock indefinitely.
+  const watchdog = window.setTimeout(finish, 120000);
+  window.addEventListener("beforeprint", beforePrint);
+  window.addEventListener("afterprint", finish, { once: true });
+  window.addEventListener("focus", returned);
+  window.addEventListener("pagehide", finish, { once: true });
+  document.addEventListener("visibilitychange", returned);
+  printMedia.addEventListener("change", mediaChanged);
+  document.title = getPrintTitle(resume.title);
+  document.body.append(host);
+  document.documentElement.dataset.currentPrint = "true";
+  try {
+    // Keep this synchronous: awaiting font loading or an iframe loses the original tap on mobile.
+    window.print();
+    if (started || disposed) resolve(started ? "requested" : "unavailable");
+    else
+      fallbackTimer = window.setTimeout(() => {
+        cleanup();
+        resolve("unavailable");
+      }, 1500);
+  } catch {
+    cleanup();
+    reject(new Error("浏览器无法调用打印，请使用浏览器菜单中的“打印”（部分手机在“分享”中）"));
+  }
+  return result;
+}

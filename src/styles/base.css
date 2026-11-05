@@ -1925,3 +1925,19 @@ input[type="file"] {
 .print-mode .paper-stack {
   margin: 0;
 }
+
+/* Mobile export reuses the prepared preview; keep its snapshot off screen until printing. */
+.current-print-document {
+  display: none;
+}
+@media print {
+  html[data-current-print="true"] body > :not(.current-print-document) {
+    display: none !important;
+  }
+  html[data-current-print="true"] .current-print-document {
+    display: block !important;
+  }
+  html[data-current-print="true"] body {
+    min-width: 0 !important;
+  }
+}

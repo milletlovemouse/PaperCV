@@ -59,7 +59,7 @@ try {
     });
     await page.reload({ waitUntil: "networkidle" });
     await ready();
-    await page.getByRole("button", { name: "排版", exact: true }).click();
+    await page.getByRole("radio", { name: "排版", exact: true }).click();
     for (const [alignment, label] of [
       ["left", "居左"],
       ["center", "居中"],
@@ -147,7 +147,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await ready();
   assert.deepEqual((await saved()).style, expected.style);
-  await page.getByRole("button", { name: "排版", exact: true }).click();
+  await page.getByRole("radio", { name: "排版", exact: true }).click();
   await page.locator(".editor-panel").evaluate((el) => (el.scrollTop = 0));
   await page.screenshot({ path: path.join(output, "layout-controls.png") });
   const file = path.join(output, "custom-layout.pdf");

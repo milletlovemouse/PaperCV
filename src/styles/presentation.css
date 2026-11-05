@@ -540,6 +540,17 @@
   max-width: 55%;
 }
 
+/* Keep complete date segments together; long custom text can still fit its column. */
+.resume-preview .entry-date-range {
+  font-variant-numeric: tabular-nums;
+}
+.resume-preview .entry-date-part {
+  display: inline-block;
+  max-width: 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* Each field owns a shrinkable box; neither a URL nor metadata can overflow it. */
 .resume-preview .entry-first-row {
   flex-wrap: wrap;
@@ -694,7 +705,7 @@
   margin-top: 18px;
   padding-top: 13px;
 }
-.profile-details summary {
+.profile-details .ui-disclosure-trigger {
   cursor: pointer;
   font-size: 11px;
   color: #6e805e;
@@ -786,13 +797,13 @@
   border-top: 1px solid #e3e9d9;
   padding-top: 17px;
 }
-.style-details summary {
+.style-details .ui-disclosure-trigger {
   cursor: pointer;
   color: #657955;
   font-size: 12px;
   font-weight: 550;
 }
-.style-details > .setting-note {
+.style-details > .ui-disclosure-content > .setting-note {
   margin-top: 12px;
 }
 .color-setting {

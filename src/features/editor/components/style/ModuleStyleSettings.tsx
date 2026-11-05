@@ -1,5 +1,5 @@
 import { PRESENTATION_DEFAULTS, type Resume } from "@resume/model";
-import { Range } from "@/shared/ui";
+import { Disclosure, Range } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 import { ChoiceChips, ColorSetting } from "./StyleControls";
@@ -10,8 +10,7 @@ interface Props {
 }
 export default function ModuleStyleSettings({ resume, style }: Props) {
   return (
-    <details className="style-details">
-      <summary>模块与技能样式</summary>
+    <Disclosure className="style-details" title="模块与技能样式">
       <ChoiceChips
         label="更多模块样式"
         value={resume.style.headingStyle}
@@ -77,6 +76,6 @@ export default function ModuleStyleSettings({ resume, style }: Props) {
         ]}
         onChange={(value) => style("skillStyle", value)}
       />
-    </details>
+    </Disclosure>
   );
 }

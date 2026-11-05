@@ -104,7 +104,7 @@ try {
 
     await page.getByRole("button", { name: "专注预览", exact: true }).click();
     await focused(original.text);
-    await page.getByRole("button", { name: "排版", exact: true }).click();
+    await page.getByRole("radio", { name: "排版", exact: true }).click();
     assert.equal((await layout()).editorVisible, true);
     assert.equal(await page.getByRole("button", { name: "应用标准排版", exact: true }).count(), 1);
     console.log(

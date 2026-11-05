@@ -97,7 +97,7 @@ async function exportPDF(resume: Resume, name: string) {
 try {
   await page.goto("http://127.0.0.1:5173", { waitUntil: "networkidle" });
   await load(sample);
-  await page.getByRole("button", { name: "模板", exact: true }).click();
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
   assert.equal(await page.locator(".template-gallery .template-card").count(), 6);
   await page.screenshot({ path: path.join(output, "gallery.png") });
   await page
@@ -105,15 +105,15 @@ try {
     .getByRole("radio", { name: "双栏", exact: true })
     .click();
   assert.equal(await page.locator(".template-gallery .template-card").count(), 1);
-  await page.getByRole("button", { name: "内容", exact: true }).click();
-  await page.getByRole("button", { name: "模板", exact: true }).click();
+  await page.getByRole("radio", { name: "内容", exact: true }).click();
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
   assert.equal(await page.locator(".template-gallery .template-card").count(), 1);
   await page
     .getByRole("radiogroup", { name: "模板布局筛选", exact: true })
     .getByRole("radio", { name: "全部", exact: true })
     .click();
   for (const template of templates) {
-    await page.getByRole("button", { name: `选择${template.name}模板`, exact: true }).click();
+    await page.getByRole("radio", { name: `选择${template.name}模板`, exact: true }).click();
     await page.waitForFunction(
       (id) =>
         !!document.querySelector(`.preview-scroll .template-${id}`) &&
@@ -121,6 +121,49 @@ try {
       template.id,
     );
     await assertGeometry();
+    if (template.id === "sidebar") {
+      const heading = await page
+        .locator(".preview-scroll .paper-page .sidebar-document .entry-heading")
+        .first()
+        .evaluate((node) => {
+          const title = node.querySelector(".entry-first-row > strong")!.getBoundingClientRect();
+          const date = node.querySelector(".entry-date")!.getBoundingClientRect();
+          const subtitle = node.querySelector(".entry-subtitle")!.getBoundingClientRect();
+          const location = node.querySelector(".entry-secondary-meta")!.getBoundingClientRect();
+          return {
+            titleAndDateShareRow: Math.abs(title.top - date.top) < 5,
+            subtitleAndLocationShareRow: Math.abs(subtitle.top - location.top) < 5,
+            noOverlap: title.right <= date.left + 1 && subtitle.right <= location.left + 1,
+            locationAtColumnEdge: Math.abs(location.right - node.getBoundingClientRect().right) < 1,
+          };
+        });
+      assert.deepEqual(heading, {
+        titleAndDateShareRow: true,
+        subtitleAndLocationShareRow: true,
+        noOverlap: true,
+        locationAtColumnEdge: true,
+      });
+    }
+    if (template.id === "timeline") {
+      const dates = await page.locator(".preview-scroll .paper-page .entry-date").evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+          const lines = new Set<number>();
+          let text;
+          while ((text = walker.nextNode())) {
+            const range = document.createRange();
+            range.selectNodeContents(text);
+            for (const rect of range.getClientRects()) if (rect.width > 0) lines.add(Math.round(rect.top));
+          }
+          return { text: node.textContent, lines: lines.size };
+        }),
+      );
+      assert.ok(dates.length >= 4);
+      assert.ok(
+        dates.every((date) => date.lines === 1),
+        JSON.stringify(dates),
+      );
+    }
     const content = await page.locator(".preview-scroll .paper-page").allTextContents();
     assert.equal(content.join("").match(/山海科技/g)?.length, 1);
     await page
@@ -247,8 +290,72 @@ try {
     assert.equal(containment.date, true, `${template.id}: date overflows its entry`);
   }
   console.log("PASS all six Letter layouts contain avatars and wrapped dates with minimal profile data");
+  for (const templateId of ["sidebar", "timeline"] as const) {
+    for (const [dateFormat, fontSize, paper, entryPriority] of [
+      ["numeric", 16, "a4", "time"],
+      ["chinese", 16, "letter", "time"],
+      ["chinese", 16, "a4", "location"],
+    ] as const) {
+      const detailed = structuredClone(sample);
+      detailed.style = {
+        ...detailed.style,
+        ...templates.find((template) => template.id === templateId)!.defaults,
+        template: templateId,
+        dateFormat,
+        fontSize,
+        paper,
+        entryPriority,
+      };
+      for (const section of detailed.sections) {
+        for (const entry of section.entries) {
+          entry.start = "2024-03-01";
+          entry.end = "2024-08-31";
+          entry.location = "浙江省杭州市西湖区";
+        }
+      }
+      await load(detailed);
+      await assertGeometry();
+      const issues = await page.locator(".preview-scroll .paper-page .entry-heading").evaluateAll((nodes) => {
+        const issues: string[] = [];
+        for (const node of nodes) {
+          const heading = node.getBoundingClientRect();
+          for (const part of node.querySelectorAll(".entry-date-part")) {
+            const bounds = part.getBoundingClientRect();
+            const range = document.createRange();
+            range.selectNodeContents(part);
+            const lines = new Set(
+              [...range.getClientRects()]
+                .filter((rect) => rect.width > 0)
+                .map((rect) => Math.round(rect.top)),
+            );
+            if (lines.size !== 1) issues.push(`split date segment: ${part.textContent}`);
+            if (
+              bounds.left < heading.left - 1 ||
+              bounds.right > heading.right + 1 ||
+              bounds.bottom > heading.bottom + 1
+            )
+              issues.push(`date outside heading: ${part.textContent}`);
+          }
+          const first = node.querySelector(".entry-first-row")!;
+          const last = node.querySelector(".entry-second-row");
+          if (
+            last &&
+            getComputedStyle(first).display !== "contents" &&
+            last.getBoundingClientRect().top < first.getBoundingClientRect().bottom - 1
+          )
+            issues.push("heading rows overlap");
+        }
+        return issues;
+      });
+      assert.deepEqual(issues, [], `${templateId}/${dateFormat}/${entryPriority}/${paper}`);
+    }
+  }
+  console.log(
+    "PASS sidebar/timeline: 16px full numeric and Chinese dates, both metadata priorities, long locations and A4/Letter containment",
+  );
+
   await load(sidebar);
-  await page.getByRole("button", { name: "模板", exact: true }).click();
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
   await page.screenshot({ path: path.join(output, "editor-sidebar.png") });
   assert.deepEqual(errors, []);
   await writeFile(

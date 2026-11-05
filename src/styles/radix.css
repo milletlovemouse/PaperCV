@@ -9,6 +9,7 @@
 @import "@radix-ui/themes/src/components/button.css";
 @import "@radix-ui/themes/src/components/checkbox.css";
 @import "@radix-ui/themes/src/components/dialog.css";
+@import "@radix-ui/themes/src/components/alert-dialog.css";
 @import "@radix-ui/themes/src/components/heading.css";
 @import "@radix-ui/themes/src/components/icon-button.css";
 @import "@radix-ui/themes/src/components/progress.css";
@@ -18,6 +19,7 @@
 @import "@radix-ui/themes/src/components/spinner.css";
 @import "@radix-ui/themes/src/components/text-area.css";
 @import "@radix-ui/themes/src/components/text-field.css";
+@import "@radix-ui/themes/src/components/tooltip.css";
 @import "@radix-ui/themes/utilities.css";
 @import "@radix-ui/themes/layout.css";
 

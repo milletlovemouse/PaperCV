@@ -1,13 +1,31 @@
 import type { Resume } from "@resume/model";
 import { getPrintTitle } from "../lib/print-title";
+import { prefersCurrentDocumentPrint, printCurrentResume, type PrintResult } from "./print-current";
 
-let activePrint: Promise<void> | undefined;
+let activePrint: Promise<PrintResult> | undefined;
 
-/** Load a separate document so printing never changes the editor or its saved data. */
-export function printResume(resume: Resume): Promise<void> {
+/** Mobile reuses prepared pages; desktop uses an isolated print document. */
+export function printResume(resume: Resume): Promise<PrintResult> {
   if (activePrint) return activePrint;
+  if (prefersCurrentDocumentPrint()) {
+    // Install the lock before print(), which can synchronously fire afterprint.
+    let done!: (result: PrintResult) => void;
+    let fail!: (reason: unknown) => void;
+    const job = new Promise<PrintResult>((resolve, reject) => {
+      done = resolve;
+      fail = reject;
+    });
+    activePrint = job;
+    printCurrentResume(resume, () => {
+      activePrint = undefined;
+    }).then(done, (error) => {
+      activePrint = undefined;
+      fail(error);
+    });
+    return job;
+  }
   const snapshot = structuredClone(resume);
-  activePrint = new Promise<void>((resolve, reject) => {
+  activePrint = new Promise<PrintResult>((resolve, reject) => {
     const previousTitle = document.title;
     const printTitle = getPrintTitle(snapshot.title);
     // macOS print dialogs use the top-level document title for the suggested filename.
@@ -68,7 +86,7 @@ export function printResume(resume: Resume): Promise<void> {
         frame.contentWindow?.addEventListener("afterprint", () => setTimeout(cleanup, 0), { once: true });
         try {
           frame.contentWindow?.print();
-          resolve();
+          resolve("requested");
         } catch {
           fail("浏览器无法打开打印窗口，请允许打印后重试");
         }

@@ -1,14 +1,17 @@
 import { Button as RadixButton } from "@radix-ui/themes";
-import { type ComponentProps } from "react";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 
-export function Button({ className = "", ...props }: ComponentProps<typeof RadixButton>) {
-  return (
-    <RadixButton
-      type="button"
-      size="2"
-      variant={className.includes("primary") ? "solid" : "surface"}
-      {...props}
-      className={`ui-button ${className}`}
-    />
-  );
-}
+export const Button = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<typeof RadixButton>>(
+  function Button({ className = "", variant = "surface", ...props }, ref) {
+    return (
+      <RadixButton
+        ref={ref}
+        type="button"
+        size="2"
+        variant={variant}
+        {...props}
+        className={`ui-button ${className}`}
+      />
+    );
+  },
+);

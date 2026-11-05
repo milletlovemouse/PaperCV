@@ -67,20 +67,20 @@ try {
   await page.getByRole("button", { name: "移除照片", exact: true }).click();
   record("valid photo upload still works after decode failures");
 
-  await page.getByRole("button", { name: "模板", exact: true }).click();
-  await page.getByRole("button", { name: /简约现代/ }).click();
+  await page.getByRole("radio", { name: "模板", exact: true }).click();
+  await page.getByRole("radio", { name: /简约现代/ }).click();
   await page.waitForSelector(".template-modern .paper-page");
-  await page.getByRole("button", { name: "排版", exact: true }).click();
+  await page.getByRole("radio", { name: "排版", exact: true }).click();
   const fontSize = page.getByRole("slider", { name: "字号", exact: true });
   await fontSize.press("Home");
   for (let step = 0; step < 6; step++) await fontSize.press("ArrowRight");
-  await page.getByRole("button", { name: /Letter/ }).click();
+  await page.getByRole("radio", { name: /Letter/ }).click();
   await page.waitForFunction(
     () => Math.abs(parseFloat(getComputedStyle(document.querySelector(".paper-page")!).width) - 816) < 2,
   );
   record("templates, font sizes and Letter paper update preview");
-  await page.getByRole("button", { name: /^A4/ }).click();
-  await page.getByRole("button", { name: "内容", exact: true }).click();
+  await page.getByRole("radio", { name: /^A4/ }).click();
+  await page.getByRole("radio", { name: "内容", exact: true }).click();
   await page.locator(".paper-page .section-heading").filter({ hasText: "工作经历" }).click();
   await page.getByLabel("公司名称", { exact: true }).first().waitFor();
   await page.getByLabel("公司名称", { exact: true }).first().fill("远山设计科技");
@@ -113,7 +113,7 @@ try {
   );
   record("adding and hiding modules works; undo restores visibility");
   await newModule.getByRole("button", { name: "删除模块", exact: true }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "确认", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "确认", exact: true }).click();
   await page.getByRole("button", { name: "基本信息" }).click();
   await page.waitForTimeout(500);
   const saved = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), STORAGE_KEY);

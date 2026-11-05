@@ -1,9 +1,9 @@
 import { ImagePlus, Sparkles, X } from "lucide-react";
-import { useState, type ChangeEvent } from "react";
+import { type ChangeEvent } from "react";
 import { profileFieldGroups } from "@resume/editor-config";
 import { type Resume } from "@resume/model";
 import DateField from "@/shared/ui/DateField";
-import { Field, SelectField, TextArea, UISelect } from "@/shared/ui";
+import { Disclosure, Field, IconButton, SelectField, TextArea, UISelect } from "@/shared/ui";
 
 interface Props {
   resume: Resume;
@@ -11,7 +11,6 @@ interface Props {
   uploadAvatar: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
 }
 export default function ProfileForm({ resume, profile, uploadAvatar }: Props) {
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   return (
     <>
       <div className="profile-photo-row">
@@ -37,15 +36,9 @@ export default function ProfileForm({ resume, profile, uploadAvatar }: Props) {
             />
           </label>
           {resume.profile.avatar && (
-            <button
-              type="button"
-              className="photo-remove"
-              aria-label="移除照片"
-              title="移除照片"
-              onClick={() => profile("avatar", "")}
-            >
+            <IconButton className="photo-remove" title="移除照片" onClick={() => profile("avatar", "")}>
               <X size={14} aria-hidden="true" />
-            </button>
+            </IconButton>
           )}
         </div>
       </div>
@@ -74,61 +67,50 @@ export default function ProfileForm({ resume, profile, uploadAvatar }: Props) {
         </label>
       </div>
       {profileFieldGroups.map((group) => (
-        <details
-          className="profile-details"
-          key={group.title}
-          onToggle={(event) => {
-            if (event.currentTarget.open) setExpandedGroups((groups) => new Set(groups).add(group.title));
-          }}
-        >
-          <summary>{group.title}</summary>
-          {expandedGroups.has(group.title) && (
-            <>
-              <div className="field-grid">
-                {group.fields.map((field) =>
-                  field.options ? (
-                    <SelectField
-                      key={field.key}
-                      label={field.label}
-                      value={resume.profile[field.key] || ""}
-                      options={field.options}
-                      onChange={(value) => profile(field.key, value)}
-                    />
-                  ) : field.key === "birthday" ? (
-                    <DateField
-                      key={field.key}
-                      label={field.label}
-                      value={resume.profile.birthday || ""}
-                      onChange={(value) => profile("birthday", value)}
-                    />
-                  ) : (
-                    <Field
-                      key={field.key}
-                      label={field.label}
-                      placeholder={field.placeholder}
-                      value={resume.profile[field.key] || ""}
-                      onChange={(value) => profile(field.key, value)}
-                    />
-                  ),
-                )}
-              </div>
-              {group.fields.some((field) => field.key === "birthday") && (
-                <label className="field">
-                  <span>年龄或生日</span>
-                  <UISelect
-                    label="年龄或生日"
-                    value={resume.profile.birthdayMode || "birthday"}
-                    onChange={(value) => profile("birthdayMode", value)}
-                    options={[
-                      ["birthday", "显示生日"],
-                      ["age", "显示年龄"],
-                    ]}
-                  />
-                </label>
-              )}
-            </>
+        <Disclosure className="profile-details" key={group.title} title={group.title}>
+          <div className="field-grid">
+            {group.fields.map((field) =>
+              field.options ? (
+                <SelectField
+                  key={field.key}
+                  label={field.label}
+                  value={resume.profile[field.key] || ""}
+                  options={field.options}
+                  onChange={(value) => profile(field.key, value)}
+                />
+              ) : field.key === "birthday" ? (
+                <DateField
+                  key={field.key}
+                  label={field.label}
+                  value={resume.profile.birthday || ""}
+                  onChange={(value) => profile("birthday", value)}
+                />
+              ) : (
+                <Field
+                  key={field.key}
+                  label={field.label}
+                  placeholder={field.placeholder}
+                  value={resume.profile[field.key] || ""}
+                  onChange={(value) => profile(field.key, value)}
+                />
+              ),
+            )}
+          </div>
+          {group.fields.some((field) => field.key === "birthday") && (
+            <label className="field">
+              <span>年龄或生日</span>
+              <UISelect
+                label="年龄或生日"
+                value={resume.profile.birthdayMode || "birthday"}
+                onChange={(value) => profile("birthdayMode", value)}
+                options={[
+                  ["birthday", "显示生日"],
+                  ["age", "显示年龄"],
+                ]}
+              />
+            </label>
           )}
-        </details>
+        </Disclosure>
       ))}
       <div className="writing-tip">
         <Sparkles size={14} />

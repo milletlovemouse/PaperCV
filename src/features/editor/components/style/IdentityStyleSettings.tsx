@@ -1,5 +1,5 @@
 import { type Resume } from "@resume/model";
-import { LayoutOptions, Range } from "@/shared/ui";
+import { Disclosure, LayoutOptions, Range } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 import { ChoiceChips, ColorSetting } from "./StyleControls";
@@ -10,8 +10,7 @@ interface Props {
 }
 export default function IdentityStyleSettings({ resume, style }: Props) {
   return (
-    <details className="style-details">
-      <summary>头部与基本信息样式</summary>
+    <Disclosure className="style-details" title="头部与基本信息样式">
       <ChoiceChips
         label="头部风格"
         value={resume.style.headerDecoration}
@@ -71,6 +70,6 @@ export default function IdentityStyleSettings({ resume, style }: Props) {
         fallback={resume.style.accent}
         onChange={(value) => style("decorationColor", value)}
       />
-    </details>
+    </Disclosure>
   );
 }

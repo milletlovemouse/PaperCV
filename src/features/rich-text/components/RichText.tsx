@@ -1,4 +1,4 @@
-import { IconButton, TextField } from "@radix-ui/themes";
+import { Toolbar } from "radix-ui";
 import {
   AlignCenter,
   AlignJustify,
@@ -17,7 +17,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
-import { Button } from "@/shared/ui";
+import { Button, IconButton, TextField } from "@/shared/ui";
 import { blockTags, safeLink, sanitizeRichText } from "../lib/sanitize";
 import { bookmark, restoreBookmark, type Bookmark, type Snapshot } from "../lib/selection";
 
@@ -280,41 +280,38 @@ export default function RichText({
     <div className="rich-field">
       <label>{label}</label>
       <div className="rich-box">
-        <div
-          className="rich-toolbar"
-          role="toolbar"
-          aria-label={`${label}格式工具`}
-          style={{ flexWrap: "wrap" }}
-        >
+        <Toolbar.Root className="rich-toolbar" aria-label={`${label}格式工具`} style={{ flexWrap: "wrap" }}>
           {tools.map(([Icon, cmd, title]) => (
-            <IconButton
-              variant="ghost"
-              size="1"
-              key={cmd}
-              type="button"
-              aria-label={title}
-              title={title}
-              disabled={
-                cmd === "undo"
-                  ? historyIndex.current === 0
-                  : cmd === "redo"
-                    ? historyIndex.current >= history.current.length - 1
-                    : false
-              }
-              aria-expanded={cmd === "link" ? linkOpen : undefined}
-              aria-controls={cmd === "link" ? `${linkId}-form` : undefined}
-              style={{ flexShrink: 0 }}
-              onMouseDown={(event) => {
-                if (ref.current) savedSelection.current = bookmark(ref.current) || savedSelection.current;
-                event.preventDefault();
-              }}
-              onClick={() => command(cmd)}
-            >
-              <Icon size={15} />
-            </IconButton>
+            <Toolbar.Button key={cmd} asChild>
+              <IconButton
+                variant="ghost"
+                size="1"
+                key={cmd}
+                type="button"
+                aria-label={title}
+                title={title}
+                disabled={
+                  cmd === "undo"
+                    ? historyIndex.current === 0
+                    : cmd === "redo"
+                      ? historyIndex.current >= history.current.length - 1
+                      : false
+                }
+                aria-expanded={cmd === "link" ? linkOpen : undefined}
+                aria-controls={cmd === "link" ? `${linkId}-form` : undefined}
+                style={{ flexShrink: 0 }}
+                onMouseDown={(event) => {
+                  if (ref.current) savedSelection.current = bookmark(ref.current) || savedSelection.current;
+                  event.preventDefault();
+                }}
+                onClick={() => command(cmd)}
+              >
+                <Icon size={15} />
+              </IconButton>
+            </Toolbar.Button>
           ))}
           <span>写下你的行动与成果</span>
-        </div>
+        </Toolbar.Root>
         {linkOpen && (
           <form
             id={`${linkId}-form`}

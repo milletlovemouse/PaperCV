@@ -82,6 +82,7 @@ export default function EditorHeader({
             <span>导入简历</span>
           </Button>
           <Button
+            variant="solid"
             className="button primary export-button"
             title="通过浏览器打印另存为 PDF；建议使用 Chrome / Edge，完整编辑数据请另存 JSON 备份"
             onClick={onExport}

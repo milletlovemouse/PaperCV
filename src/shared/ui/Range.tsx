@@ -27,17 +27,21 @@ export function Range({
         </b>
       </span>
       <Slider.Root
-        className="rt-SliderRoot rt-r-size-1 rt-variant-surface"
+        className="ui-slider"
         min={min}
         max={max}
         step={step}
         value={[value]}
         onValueChange={(values) => onChange(values[0])}
       >
-        <Slider.Track className="rt-SliderTrack">
-          <Slider.Range className="rt-SliderRange" />
+        <Slider.Track className="ui-slider-track">
+          <Slider.Range className="ui-slider-range" />
         </Slider.Track>
-        <Slider.Thumb className="rt-SliderThumb" aria-label={label} />
+        <Slider.Thumb
+          className="ui-slider-thumb"
+          aria-label={label}
+          aria-valuetext={`${Number(value.toFixed(2))}${unit}`}
+        />
       </Slider.Root>
       <div>
         <small>

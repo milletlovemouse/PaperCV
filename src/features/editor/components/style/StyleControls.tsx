@@ -1,4 +1,4 @@
-import { Button } from "@/shared/ui";
+import { Button, ChoiceGroup, ChoiceItem } from "@/shared/ui";
 
 export function ChoiceChips({
   label,
@@ -14,18 +14,13 @@ export function ChoiceChips({
   return (
     <div className="layout-option">
       <span>{label}</span>
-      <div className="style-chips" role="group" aria-label={label}>
+      <ChoiceGroup label={label} className="style-chips" value={value} onChange={onChange}>
         {options.map(([id, text]) => (
-          <Button
-            key={id}
-            aria-pressed={value === id}
-            className={value === id ? "chosen" : ""}
-            onClick={() => onChange(id)}
-          >
-            {text}
-          </Button>
+          <ChoiceItem key={id} value={id} asChild>
+            <Button className={value === id ? "chosen" : ""}>{text}</Button>
+          </ChoiceItem>
         ))}
-      </div>
+      </ChoiceGroup>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { SegmentedControl } from "@radix-ui/themes";
 import { Check, CheckCheck } from "lucide-react";
 import { type Resume } from "@resume/model";
 import { getTemplate, templates, type TemplateCategory } from "@resume/templates";
+import { ChoiceGroup, ChoiceItem } from "@/shared/ui";
 import { TemplateThumbnail } from "@/features/preview/components/TemplateThumbnail";
 
 import type { ResumeUpdater, StateSetter } from "../types";
@@ -36,36 +37,42 @@ export default function TemplatePanel({ resume, update, templateFilter, setTempl
           </SegmentedControl.Item>
         ))}
       </SegmentedControl.Root>
-      <div className="template-gallery">
+      <ChoiceGroup
+        label="简历模板"
+        className="template-gallery"
+        value={resume.style.template}
+        onChange={(id) => {
+          const template = templates.find((item) => item.id === id);
+          if (template)
+            update(
+              (r) => ({ ...r, style: { ...r.style, ...template.defaults, template: template.id } }),
+              true,
+            );
+        }}
+      >
         {templates
           .filter((template) => templateFilter === "all" || template.category === templateFilter)
           .map((template) => (
-            <button
-              key={template.id}
-              aria-label={`选择${template.name}模板`}
-              aria-pressed={resume.style.template === template.id}
-              className={`template-card ${resume.style.template === template.id ? "selected" : ""}`}
-              onClick={() =>
-                update(
-                  (r) => ({ ...r, style: { ...r.style, ...template.defaults, template: template.id } }),
-                  true,
-                )
-              }
-            >
-              <TemplateThumbnail resume={resume} template={template.id} />
-              <div className="template-info">
-                <div>
-                  <strong>{template.name}</strong>
-                  <span className="template-label">{template.label}</span>
+            <ChoiceItem key={template.id} value={template.id} asChild>
+              <button
+                aria-label={`选择${template.name}模板`}
+                className={`template-card ${resume.style.template === template.id ? "selected" : ""}`}
+              >
+                <TemplateThumbnail resume={resume} template={template.id} />
+                <div className="template-info">
+                  <div>
+                    <strong>{template.name}</strong>
+                    <span className="template-label">{template.label}</span>
+                  </div>
+                  <p>{template.description}</p>
                 </div>
-                <p>{template.description}</p>
-              </div>
-              <span className="template-check">
-                {resume.style.template === template.id && <Check size={13} />}
-              </span>
-            </button>
+                <span className="template-check">
+                  {resume.style.template === template.id && <Check size={13} />}
+                </span>
+              </button>
+            </ChoiceItem>
           ))}
-      </div>
+      </ChoiceGroup>
       <div className="active-template-detail">
         <span>当前 · {getTemplate(resume.style.template).name}</span>
         <p>{getTemplate(resume.style.template).detail}</p>

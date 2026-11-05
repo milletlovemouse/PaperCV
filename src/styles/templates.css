@@ -272,23 +272,26 @@
 }
 .template-sidebar .sidebar-document .entry-first-row,
 .template-sidebar .sidebar-document .entry-second-row {
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
 }
-.template-sidebar .sidebar-document .entry-first-row strong {
+.resume-preview.template-sidebar .sidebar-document .entry-first-row > strong {
+  flex: 1 1 auto;
   font-size: var(--resume-font-size);
 }
 .template-sidebar .sidebar-document .entry-date {
-  display: block;
-  white-space: normal;
   font-size: 9px;
-  padding-top: 3px;
 }
 .template-sidebar .sidebar-document .entry-second-row {
   font-size: 9px;
 }
-.template-sidebar .sidebar-document .entry-second-row > span {
-  display: block;
-  padding-top: 2px;
+.resume-preview.template-sidebar .sidebar-document .entry-second-row > .entry-subtitle {
+  flex: 1 1 8em;
+}
+.resume-preview.template-sidebar .sidebar-document .entry-second-row > .entry-secondary-meta {
+  max-width: 100%;
 }
 .template-sidebar .sidebar-document .body-unit {
   font-size: calc(var(--resume-font-size) - 1px);
@@ -310,8 +313,9 @@
 
 /* 05. Timeline: actual date column with connected content track. */
 .template-timeline {
-  --timeline-inset: 29mm;
-  --timeline-line: 24mm;
+  --timeline-date-width: calc(var(--resume-font-size) * 9.5);
+  --timeline-line: calc(var(--timeline-date-width) + 3mm);
+  --timeline-inset: calc(var(--timeline-date-width) + 8mm);
 }
 .template-timeline .resume-identity {
   text-align: left;
@@ -349,7 +353,7 @@
 }
 .template-timeline .entry-heading {
   display: grid;
-  grid-template-columns: 21mm minmax(0, 1fr);
+  grid-template-columns: var(--timeline-date-width) minmax(0, 1fr);
   column-gap: 8mm;
   align-items: start;
   padding: 10px 0 5px;

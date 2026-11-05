@@ -1,31 +1,31 @@
-import { IconButton as RadixIconButton } from "@radix-ui/themes";
-import { type ReactNode } from "react";
+import { IconButton as RadixIconButton, Tooltip } from "@radix-ui/themes";
+import { forwardRef, type ComponentPropsWithoutRef } from "react";
 
-export function IconButton({
-  title,
-  children,
-  onClick,
-  disabled,
-  className = "",
-}: {
+type Props = ComponentPropsWithoutRef<typeof RadixIconButton> & {
   title: string;
-  children: ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  className?: string;
-}) {
-  return (
+  tooltip?: boolean;
+};
+
+export const IconButton = forwardRef<HTMLButtonElement, Props>(function IconButton(
+  { title, tooltip = true, className = "", ...props },
+  ref,
+) {
+  const button = (
     <RadixIconButton
+      ref={ref}
       type="button"
       size="1"
       variant="ghost"
-      className={`icon-button ${className}`}
       aria-label={title}
-      title={title}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {children}
-    </RadixIconButton>
+      {...props}
+      className={`icon-button ${className}`}
+    />
   );
-}
+  return tooltip ? (
+    <Tooltip content={title} delayDuration={450} className="ui-tooltip">
+      {button}
+    </Tooltip>
+  ) : (
+    button
+  );
+});

@@ -1,6 +1,6 @@
 import { DATE_FORMAT_OPTIONS } from "@resume/editor-config";
 import { type Resume } from "@resume/model";
-import { LayoutOptions, UISelect } from "@/shared/ui";
+import { Disclosure, LayoutOptions, UISelect } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 
@@ -10,8 +10,7 @@ interface Props {
 }
 export default function EntryStyleSettings({ resume, style }: Props) {
   return (
-    <details className="style-details" open>
-      <summary>经历标题与日期</summary>
+    <Disclosure className="style-details" title="经历标题与日期" defaultOpen>
       <label className="field date-format-setting">
         <span>日期显示格式</span>
         <UISelect
@@ -104,6 +103,6 @@ export default function EntryStyleSettings({ resume, style }: Props) {
       <p className="setting-note">
         自动模式会在时间或地点占用副标题行时，将链接独立放在下方左侧。同行布局放不下时自动换行；单行标题下的链接始终独立成行。
       </p>
-    </details>
+    </Disclosure>
   );
 }

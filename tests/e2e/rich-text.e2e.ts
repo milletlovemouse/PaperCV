@@ -15,6 +15,12 @@ page.on("pageerror", (error) => {
   errors.push(error.message);
   console.error(error.message);
 });
+// Use the same optimized dependency URL as the controls to share Radix's context.
+const buttonModule = await (
+  await context.request.get("http://127.0.0.1:5173/src/shared/ui/IconButton.tsx")
+).text();
+const themeModule = buttonModule.match(/from ["']([^"']*@radix-ui_themes\.js[^"']*)["']/)?.[1];
+assert.ok(themeModule, "Vite must resolve the Radix Themes module");
 await page.route("**/__rich-text-test", (route) =>
   route.fulfill({
     contentType: "text/html",
@@ -27,6 +33,9 @@ await page.route("**/__rich-text-test", (route) =>
   </script></head><body><div id="root"></div><script type="module">
     import React from "/node_modules/.vite/deps/react.js";
     import ReactDOM from "/node_modules/.vite/deps/react-dom_client.js";
+    import { Theme } from "${themeModule}";
+    import "/src/styles/radix.css";
+    import "/src/styles/theme.css";
     import RichText from "/src/features/rich-text/components/RichText.tsx";
     import ResumePreview from "/src/features/preview/components/ResumePreview.tsx";
     import { blankResume } from "/shared/resume/model.ts";
@@ -49,7 +58,7 @@ await page.route("**/__rich-text-test", (route) =>
         React.createElement(RichText, { value: resume.sections[0].entries[0].description, onChange: setDescription }),
         React.createElement(ResumePreview, { resume }));
     }
-    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Fixture));
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Theme, { appearance: "light", accentColor: "gray", className: "editor-theme" }, React.createElement(Fixture)));
   </script></body></html>`,
   }),
 );

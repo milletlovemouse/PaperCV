@@ -1,5 +1,7 @@
 import { CircleHelp, FilePlus2, Github, LayoutTemplate, PencilLine, Settings2 } from "lucide-react";
 
+import { ChoiceGroup, ChoiceItem } from "@/shared/ui";
+
 import type { EditorTab } from "../types";
 
 interface Props {
@@ -14,22 +16,27 @@ export default function EditorNavigation({ tab, previewOnly, onTabChange, onNew,
   return (
     <nav className="rail" aria-label="编辑器导航">
       <div className="rail-top">
-        {(
-          [
-            ["content", PencilLine, "内容"],
-            ["templates", LayoutTemplate, "模板"],
-            ["style", Settings2, "排版"],
-          ] as const
-        ).map(([key, Icon, label]) => (
-          <button
-            key={key}
-            className={`rail-item ${tab === key && !previewOnly ? "active" : ""}`}
-            onClick={() => onTabChange(key)}
-          >
-            <Icon size={21} strokeWidth={1.6} />
-            <span>{label}</span>
-          </button>
-        ))}
+        <ChoiceGroup
+          label="编辑面板"
+          value={previewOnly ? "" : tab}
+          onChange={(next) => onTabChange(next as EditorTab)}
+          orientation="vertical"
+        >
+          {(
+            [
+              ["content", PencilLine, "内容"],
+              ["templates", LayoutTemplate, "模板"],
+              ["style", Settings2, "排版"],
+            ] as const
+          ).map(([key, Icon, label]) => (
+            <ChoiceItem key={key} value={key} asChild>
+              <button className={`rail-item ${tab === key && !previewOnly ? "active" : ""}`}>
+                <Icon size={21} strokeWidth={1.6} />
+                <span>{label}</span>
+              </button>
+            </ChoiceItem>
+          ))}
+        </ChoiceGroup>
         <div className="rail-divider" />
         <button className="rail-item" onClick={onNew}>
           <FilePlus2 size={21} strokeWidth={1.6} />

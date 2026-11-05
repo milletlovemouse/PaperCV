@@ -1,7 +1,7 @@
 import { ArrowRight, Check, Maximize2, Plus } from "lucide-react";
 import { LAYOUT_DEFAULTS, PRESENTATION_DEFAULTS, type Resume } from "@resume/model";
 import { ORIGINAL_PDF_STYLE, STANDARD_STYLE } from "@resume/templates";
-import { Button, Checkbox, LayoutOptions } from "@/shared/ui";
+import { Button, ChoiceGroup, ChoiceItem, LayoutOptions, SwitchField } from "@/shared/ui";
 import EntryStyleSettings from "../components/style/EntryStyleSettings";
 import IdentityStyleSettings from "../components/style/IdentityStyleSettings";
 import ModuleStyleSettings from "../components/style/ModuleStyleSettings";
@@ -109,17 +109,22 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
       <TypographySettings resume={resume} style={style} />
       <div className="style-group">
         <h3>主题色</h3>
-        <div className="color-swatches">
+        <ChoiceGroup
+          label="主题色"
+          className="color-swatches"
+          value={resume.style.accent}
+          onChange={(value) => style("accent", value)}
+        >
           {["#34584b", "#303b4e", "#272727", "#a65b41", "#776044", "#626c80"].map((color) => (
-            <button
-              key={color}
-              aria-label={`主题色 ${color}`}
-              style={{ background: color }}
-              className={resume.style.accent === color ? "chosen" : ""}
-              onClick={() => style("accent", color)}
-            >
-              {resume.style.accent === color && <Check size={16} />}
-            </button>
+            <ChoiceItem key={color} value={color} asChild>
+              <button
+                aria-label={`主题色 ${color}`}
+                style={{ background: color }}
+                className={resume.style.accent === color ? "chosen" : ""}
+              >
+                {resume.style.accent === color && <Check size={16} />}
+              </button>
+            </ChoiceItem>
           ))}
           <label className="custom-color" title="自定义主题色">
             <Plus size={16} />
@@ -130,23 +135,32 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
               onChange={(e) => style("accent", e.target.value)}
             />
           </label>
-        </div>
+        </ChoiceGroup>
       </div>
       <div className="style-group">
         <h3>纸张设置</h3>
-        <div className="paper-options">
+        <ChoiceGroup
+          label="纸张尺寸"
+          className="paper-options"
+          value={resume.style.paper}
+          onChange={(value) => style("paper", value)}
+        >
           {(["a4", "letter"] as const).map((paper) => (
-            <button
-              key={paper}
-              className={resume.style.paper === paper ? "chosen" : ""}
-              onClick={() => style("paper", paper)}
-            >
-              <span>{paper === "a4" ? "A4" : "Letter"}</span>
-              <small>{paper === "a4" ? "210 × 297 mm" : "215.9 × 279.4 mm"}</small>
-              {resume.style.paper === paper && <Check size={14} />}
-            </button>
+            <ChoiceItem key={paper} value={paper} asChild>
+              <button className={resume.style.paper === paper ? "chosen" : ""}>
+                <span>{paper === "a4" ? "A4" : "Letter"}</span>
+                <small>{paper === "a4" ? "210 × 297 mm" : "215.9 × 279.4 mm"}</small>
+                {resume.style.paper === paper && <Check size={14} />}
+              </button>
+            </ChoiceItem>
           ))}
-        </div>
+        </ChoiceGroup>
+        <SwitchField
+          label="显示页码"
+          description="在每页底部显示「当前页 / 总页数」"
+          checked={resume.style.showPageNumbers}
+          onChange={(checked) => style("showPageNumbers", checked)}
+        />
       </div>
       <ChoiceChips
         label="纸张风格"
@@ -160,13 +174,6 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
         ]}
         onChange={(value) => style("paperStyle", value)}
       />
-      <label className="inline-checkbox">
-        <Checkbox
-          checked={resume.style.showPageNumbers}
-          onCheckedChange={(checked) => style("showPageNumbers", checked === true)}
-        />
-        显示页码
-      </label>
       <Button className="button fit-button" onClick={fitOnePage}>
         <Maximize2 size={16} />
         适配为一页

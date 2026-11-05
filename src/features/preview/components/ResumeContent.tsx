@@ -108,10 +108,17 @@ function EntryContent({
         ? "numeric"
         : "original"
       : style.dateFormat;
-  const date = [entry.start, entry.end]
-    .filter(Boolean)
-    .map((value) => formatDate(value, dateFormat))
-    .join(style.template === "classic" ? " - " : " — ");
+  const dateParts = [entry.start, entry.end].filter(Boolean).map((value) => formatDate(value, dateFormat));
+  const date = dateParts.length ? (
+    <span className="entry-date-range">
+      {dateParts.map((value, index) => (
+        <span className="entry-date-part" key={index}>
+          {index > 0 ? (style.template === "classic" ? " - " : " — ") : ""}
+          {value}
+        </span>
+      ))}
+    </span>
+  ) : null;
   const hasHeading = entry.title || subtitle || date || entry.location;
   const primaryMeta = style.entryPriority === "location" ? entry.location : date;
   const secondaryMeta = style.entryPriority === "location" ? date : entry.location;

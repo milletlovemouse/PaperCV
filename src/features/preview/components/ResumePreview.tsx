@@ -123,7 +123,7 @@ export default function ResumePreview({
           </div>
         ))}
       </div>
-      <style>{`@page { size: ${size.width}mm ${size.height}mm; margin: 0; }`}</style>
+      <style>{`@page { size: ${size.width}mm ${size.height}mm; margin: 0 !important; }`}</style>
     </div>
   );
 }

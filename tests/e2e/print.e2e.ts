@@ -166,7 +166,10 @@ try {
   const failedPage = await failed.newPage();
   await failedPage.goto(site.url, { waitUntil: "networkidle" });
   await failedPage.getByRole("button", { name: "导出 PDF", exact: true }).click();
-  await failedPage.getByText("简历打印排版失败，请检查内容或图片后重试").waitFor();
+  await failedPage
+    .locator(".toast")
+    .getByText("简历打印排版失败，请检查内容或图片后重试", { exact: true })
+    .waitFor();
   assert.equal(await failedPage.locator('iframe[title="简历打印"]').count(), 0);
   assert.equal(await failedPage.getByRole("button", { name: "导出 PDF", exact: true }).isEnabled(), true);
   await failedPage.getByRole("button", { name: "导入简历", exact: true }).click();

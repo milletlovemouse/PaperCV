@@ -1,5 +1,5 @@
 import { Theme } from "@radix-ui/themes";
-import { CheckCheck, PanelLeftClose, X } from "lucide-react";
+import { PanelLeftClose } from "lucide-react";
 import { useCallback, useEffect, useState, type ChangeEvent } from "react";
 import { blankResume } from "@resume/model";
 import type { TemplateCategory } from "@resume/templates";
@@ -23,7 +23,7 @@ import PreviewPanel from "@/features/preview/components/PreviewPanel";
 import { useFitOnePage } from "@/features/preview/hooks/useFitOnePage";
 import { usePreviewLayout } from "@/features/preview/hooks/usePreviewLayout";
 import { useTheme } from "@/shared/hooks/useTheme";
-import { Button, IconButton, Modal } from "@/shared/ui";
+import { ConfirmDialog, IconButton, Notice } from "@/shared/ui";
 
 export default function App() {
   const { theme, setTheme } = useTheme();
@@ -55,11 +55,6 @@ export default function App() {
   const [backupOpen, setBackupOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState("");
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(""), 4500);
-    return () => clearTimeout(timer);
-  }, [toast]);
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) return;
@@ -264,15 +259,7 @@ export default function App() {
           visibleSections={visibleSections}
           wordCount={wordCount}
         />
-        {toast && (
-          <div className="toast" role="status">
-            <CheckCheck size={17} />
-            {toast}
-            <button aria-label="关闭提示" onClick={() => setToast("")}>
-              <X size={14} />
-            </button>
-          </div>
-        )}
+        {toast && <Notice message={toast} onClose={() => setToast("")} />}
         {importOpen && (
           <ImportDialog
             importing={importing}
@@ -308,28 +295,12 @@ export default function App() {
           />
         )}
         {confirm && (
-          <Modal
+          <ConfirmDialog
             title={confirm.title}
+            message={confirm.message}
             onClose={() => setConfirm(null)}
-            footer={
-              <>
-                <Button className="button secondary" onClick={() => setConfirm(null)}>
-                  取消
-                </Button>
-                <Button
-                  className="button primary"
-                  onClick={() => {
-                    confirm.action();
-                    setConfirm(null);
-                  }}
-                >
-                  确认
-                </Button>
-              </>
-            }
-          >
-            <p className="confirm-message">{confirm.message}</p>
-          </Modal>
+            onConfirm={confirm.action}
+          />
         )}
         {backupOpen && (
           <BackupDialog

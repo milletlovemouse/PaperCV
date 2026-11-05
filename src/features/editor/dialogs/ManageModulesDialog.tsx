@@ -36,7 +36,7 @@ export default function ManageModulesDialog({
             <Plus size={15} />
             添加模块
           </Button>
-          <Button className="button primary" onClick={() => setManageOpen(false)}>
+          <Button variant="solid" className="button primary" onClick={() => setManageOpen(false)}>
             完成
           </Button>
         </>

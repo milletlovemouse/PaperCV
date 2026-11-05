@@ -1,3 +1,4 @@
+import { Theme } from "@radix-ui/themes";
 import { zhCN } from "date-fns/locale/zh-CN";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { forwardRef, useId, useRef, useState, type ComponentProps } from "react";
@@ -7,6 +8,10 @@ import { parseDateParts } from "@resume/editor-config";
 import { CALENDAR_YEARS, calendarDate, calendarValue } from "./date-picker";
 import "./date-picker.css";
 import { TextField } from "./index";
+import { UISelect } from "./UISelect";
+
+const yearOptions = CALENDAR_YEARS.map((year) => [String(year), `${year}年`] as const);
+const monthOptions = Array.from({ length: 12 }, (_, month) => [String(month), `${month + 1}月`] as const);
 
 // Forward the library's ref to the actual Radix input for focus and keyboard handling.
 const CalendarInput = forwardRef<
@@ -69,6 +74,11 @@ export default function DateField({
         showPopperArrow={false}
         popperPlacement="bottom-start"
         portalId="papercv-date-picker-portal"
+        onClickOutside={(event) => {
+          // Radix renders its menu in a portal outside the calendar DOM.
+          if (event.target instanceof Element && event.target.closest(".calendar-select-content"))
+            event.preventDefault();
+        }}
         calendarClassName="papercv-calendar"
         popperClassName="papercv-calendar-popper"
         minDate={new Date(1900, 0, 1)}
@@ -89,52 +99,54 @@ export default function DateField({
         monthAriaLabelPrefix="选择月份"
         chooseDayAriaLabelPrefix="选择日期"
         renderCustomHeader={(header) => (
-          <div className="calendar-header">
-            <button
-              type="button"
-              aria-label={daily ? "上个月" : "上一年"}
-              title={daily ? "上个月" : "上一年"}
-              disabled={daily ? header.prevMonthButtonDisabled : header.prevYearButtonDisabled}
-              onClick={daily ? header.decreaseMonth : header.decreaseYear}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <div className="calendar-header-selects">
-              <select
-                aria-label="选择年份"
-                value={header.date.getFullYear()}
-                onChange={(event) => header.changeYear(+event.target.value)}
+          <Theme asChild>
+            <div className="calendar-header">
+              <button
+                type="button"
+                aria-label={daily ? "上个月" : "上一年"}
+                title={daily ? "上个月" : "上一年"}
+                disabled={daily ? header.prevMonthButtonDisabled : header.prevYearButtonDisabled}
+                onClick={daily ? header.decreaseMonth : header.decreaseYear}
               >
-                {CALENDAR_YEARS.map((year) => (
-                  <option key={year} value={year}>
-                    {year}年
-                  </option>
-                ))}
-              </select>
-              {daily && (
-                <select
-                  aria-label="选择月份"
-                  value={header.date.getMonth()}
-                  onChange={(event) => header.changeMonth(+event.target.value)}
-                >
-                  {Array.from({ length: 12 }, (_, month) => (
-                    <option key={month} value={month}>
-                      {month + 1}月
-                    </option>
-                  ))}
-                </select>
-              )}
+                <ChevronLeft size={16} />
+              </button>
+              <div
+                className="calendar-header-selects"
+                onKeyDown={(event) => {
+                  if (event.target instanceof Element && event.target.closest(".calendar-select-content"))
+                    event.stopPropagation();
+                }}
+              >
+                <UISelect
+                  label="选择年份"
+                  value={String(header.date.getFullYear())}
+                  options={yearOptions}
+                  onChange={(year) => header.changeYear(Number(year))}
+                  size="compact"
+                  contentClassName="calendar-select-content"
+                />
+                {daily && (
+                  <UISelect
+                    label="选择月份"
+                    value={String(header.date.getMonth())}
+                    options={monthOptions}
+                    onChange={(month) => header.changeMonth(Number(month))}
+                    size="compact"
+                    contentClassName="calendar-select-content"
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                aria-label={daily ? "下个月" : "下一年"}
+                title={daily ? "下个月" : "下一年"}
+                disabled={daily ? header.nextMonthButtonDisabled : header.nextYearButtonDisabled}
+                onClick={daily ? header.increaseMonth : header.increaseYear}
+              >
+                <ChevronRight size={16} />
+              </button>
             </div>
-            <button
-              type="button"
-              aria-label={daily ? "下个月" : "下一年"}
-              title={daily ? "下个月" : "下一年"}
-              disabled={daily ? header.nextMonthButtonDisabled : header.nextYearButtonDisabled}
-              onClick={daily ? header.increaseMonth : header.increaseYear}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
+          </Theme>
         )}
       />
       {error && !disabled ? (

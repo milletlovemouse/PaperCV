@@ -73,7 +73,8 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 约定：
 
 - 编辑器预览和打印页共用内容组件、字体及分页逻辑，长内容和双栏模板都要正确分页。
-- 打印使用点击时的简历快照，通过 `?print=<token>` 的同源 iframe 准备；保持消息的 origin、来源窗口和 token 校验。
+- 打印使用点击时的简历快照。桌面通过 `?print=<token>` 的同源 iframe 准备，保持消息的 origin、来源窗口和 token 校验；手机复用已完成分页的预览，在点击事件内同步调用顶层 `window.print()`，避免重新加载文档与字体，未就绪时提示用户稍后重试。
+- 手机打印快照通过专用打印容器与编辑器隔离，取消、异常、返回页面及浏览器不响应时清理容器、标题和锁；不把 `window.print()` 返回视为已保存。网址来源属于浏览器页眉页脚，提供关闭提示，不保证所有系统打印界面都可由 CSS 控制。
 - 等待字体、图片与分页完成再调用打印，保留失败、超时、取消、重试和重复点击处理。
 - PDF 建议文件名取左上角简历名称，经 `getPrintTitle` 清理后使用；主页面和打印页标题都要设置，清理时恢复主页面原标题和焦点。
 - `afterprint` 也会在取消时触发，不能据此提示“文件已保存”。
@@ -115,7 +116,10 @@ pnpm test:print           # 构建后运行：静态部署、打印生命周期�
 
 - 代码修改通常运行 `pnpm check` 和 `pnpm build`；纯文档修改只需检查排版、命令及本地资源引用。
 - 数据、导入、日期或纯函数修改，运行对应单元测试，按需补充能覆盖实际行为的回归用例。
-- 分页、模板、字体或打印修改，构建后运行 `pnpm test:print`；排版交互按需运行 `pnpm test:layout`、`pnpm test:templates`、`pnpm test:preview`。
+- 分页、模板、字体或打印修改，构建后运行 `pnpm test:print` 和 `pnpm test:mobile-print`；排版交互按需运行 `pnpm test:layout`、`pnpm test:templates`、`pnpm test:preview`。
+- 通用交互组件优先复用 `src/shared/ui` 的 Button、IconButton、Modal、ConfirmDialog、Disclosure、ChoiceGroup 和 Notice；互斥选项保留 radio 语义，图标按钮提供可访问名称。
+- 修改共享控件时运行 `pnpm test:ui`，覆盖折叠、键盘选择、滑块、弹窗焦点恢复和通知，并检查桌面 / 窄屏的深浅色显示。独立 UI 测试需提供与应用一致的 Radix Theme 环境。
+- 下拉框或日期选择器修改运行 `pnpm test:select`，验证年份边界、日期联动、键盘与浮层交互。
 - 富文本和基本信息展示分别有 `pnpm test:richtext`、`pnpm test:identity`；完整编辑流程用 `pnpm test:e2e`；复杂 PDF 排版用 `pnpm test:presentation`。
 - UI 变更用隔离浏览器和项目示例数据检查桌面、窄屏、深浅色及相关弹层，避免读写日常浏览器中的真实简历。
 - 不把 `dist/`、`node_modules/`、测试输出或个人简历数据作为源码提交；不覆盖用户已有的无关改动。
