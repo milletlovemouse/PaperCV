@@ -87,9 +87,7 @@ try {
           );
           await client.detach();
         }
-        await page.getByRole("button", { name: "小留白（8 mm）", exact: true }).click();
         const pageMargin = page.getByRole("slider", { name: "页边距", exact: true });
-        assert.equal(await pageMargin.getAttribute("aria-valuenow"), "8");
         await pageMargin.press("Home");
         assert.equal(await pageMargin.getAttribute("aria-valuenow"), "6");
         await page.waitForFunction(() => document.documentElement.dataset.pdfReady === "true");

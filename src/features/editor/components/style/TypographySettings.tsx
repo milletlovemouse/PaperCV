@@ -1,5 +1,5 @@
 import { MIN_PAGE_MARGIN, type Resume } from "@resume/model";
-import { Button, Range, UISelect } from "@/shared/ui";
+import { Range, UISelect } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 
@@ -50,12 +50,6 @@ export default function TypographySettings({ resume, style }: Props) {
         unit="mm"
         onChange={(v) => style("margin", v)}
       />
-      <div className="margin-actions">
-        <Button variant="surface" onClick={() => style("margin", 8)}>
-          小留白（8 mm）
-        </Button>
-        <p>手机保存 PDF 白边偏大时可减小页边距。浏览器自身的打印边距仍由系统控制。</p>
-      </div>
       <Range
         label="模块间距"
         value={resume.style.moduleSpacing}
