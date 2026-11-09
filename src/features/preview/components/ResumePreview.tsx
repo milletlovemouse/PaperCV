@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import type { Resume } from "@resume/model";
 import { paginate } from "../lib/paginate";
+import { layoutEntryHeadings } from "../lib/layout-entry-headings";
 
 import { paperSize, verticalPageMargin } from "../lib/paper";
 import { layoutAttributes, resumeStyles } from "../lib/presentation";
@@ -46,6 +47,8 @@ export default function ResumePreview({
     if (!fontsReady || !measureRef.current) return;
     try {
       const height = ((size.height - verticalPageMargin(resume.style) * 2) * 96) / 25.4;
+      layoutEntryHeadings(measureRef.current);
+      if (isSidebar && sidebarMeasureRef.current) layoutEntryHeadings(sidebarMeasureRef.current);
       const mainPages = paginate(measureRef.current, height);
       const sidebarPages =
         isSidebar && sidebarMeasureRef.current ? paginate(sidebarMeasureRef.current, height) : [];

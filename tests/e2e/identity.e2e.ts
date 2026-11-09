@@ -473,7 +473,7 @@ try {
   console.log(
     `PASS ${singleTitleCombinations} single-line title pairs: one alignment and no independent subtitle movement`,
   );
-  for (const title of ["粤税通小程序", "数据分析资源管控"]) {
+  for (const title of ["粤税通小程序", "数据分析资源管控", "广东税务智能导办平台"]) {
     await update({
       entry: {
         title,
@@ -489,6 +489,7 @@ try {
         entryLayout: "one",
         entryTitleAlign: "center",
         entryMetaAlign: "right",
+        dateFormat: "chinese",
       },
     });
     const geometry = await page.locator(".paper-page .entry-first-row").evaluate((node) => {
@@ -499,18 +500,66 @@ try {
       range.selectNodeContents(group);
       const text = range.getBoundingClientRect();
       const row = node.getBoundingClientRect();
-      const date = node.querySelector(".entry-date")!.getBoundingClientRect();
+      const dateNode = node.querySelector(".entry-date")!;
+      const date = dateNode.getBoundingClientRect();
+      const metadataText = document.createRange();
+      metadataText.selectNodeContents(dateNode);
+      const metadataBounds = metadataText.getBoundingClientRect();
       return {
         sameLine: Math.abs(title.top - subtitle.top) < 2,
         center: Math.abs(text.left + text.width / 2 - row.left - row.width / 2),
-        overlap: text.right > date.left + 1,
+        overlap: text.right > date.left + 1 && text.bottom > date.top + 1,
+        metadataSingleLine: metadataBounds.height < parseFloat(getComputedStyle(dateNode).lineHeight) + 2,
       };
     });
     assert.equal(geometry.sameLine, true, `${title}: use available width before wrapping subtitle`);
     assert.ok(geometry.center < 2, `${title}: keep the whole title pair centered`);
     assert.equal(geometry.overlap, false, `${title}: title pair must not overlap metadata`);
+    assert.equal(
+      geometry.metadataSingleLine,
+      true,
+      `${title}: keep complete Chinese dates and city together`,
+    );
   }
   console.log("PASS centered long single-line title pairs use available row width");
+  for (const metaAlign of ["left", "right"] as const) {
+    for (const paper of ["a4", "letter"] as const) {
+      for (const title of ["山海", "广东税务智能导办平台", "山海"]) {
+        const long = title !== "山海";
+        await update({
+          entry: { title, subtitle: long ? "前端开发 - 广东睿盟计算机科技有限公司" : "研发" },
+          style: { paper, entryMetaAlign: metaAlign, fontSize: 14, entryTitleSize: 14 },
+        });
+        const heading = page.locator(".paper-page .entry-heading");
+        assert.equal(
+          await heading.getAttribute("data-metadata-row"),
+          long ? "true" : null,
+          `${paper}/${metaAlign}/${title}: recompute metadata placement after content/paper changes`,
+        );
+        const geometry = await heading.evaluate((node) => {
+          const row = node.querySelector(".entry-first-row")!.getBoundingClientRect();
+          const metadata = node.querySelector(".entry-date")!;
+          const range = document.createRange();
+          range.selectNodeContents(metadata);
+          const text = range.getBoundingClientRect();
+          const title = node.querySelector(".entry-title-group")!.getBoundingClientRect();
+          return {
+            left: Math.abs(text.left - row.left),
+            right: Math.abs(row.right - text.right),
+            lines: text.height / parseFloat(getComputedStyle(metadata).lineHeight),
+            separate: text.top >= title.bottom - 1,
+          };
+        });
+        assert.ok(geometry[metaAlign] < 2, `${paper}/${metaAlign}: preserve metadata alignment`);
+        assert.ok(geometry.lines < 1.1, `${paper}/${metaAlign}: do not squeeze Chinese dates or city`);
+        assert.equal(geometry.separate, long, `${paper}/${metaAlign}: move metadata only when necessary`);
+        assert.equal(await page.locator(".paper-page .entry-width-probe").count(), 0);
+      }
+    }
+  }
+  console.log(
+    "PASS metadata stays intact and aligned; row placement updates on A4/Letter and content changes",
+  );
   let inlineCombinations = 0;
   for (const template of templates) {
     for (const subtitleAlign of ["left", "center", "right"] as const) {

@@ -926,7 +926,7 @@
 }
 .resume-preview[data-entry-layout="one"][data-entry-title-align="center"] .entry-first-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) fit-content(calc(100% - 6em)) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) fit-content(100%) minmax(0, 1fr);
 }
 .resume-preview[data-entry-title-align="center"] .entry-title-group {
   grid-column: 2;
@@ -944,6 +944,50 @@
   grid-column: 2;
   grid-row: 1;
   width: 100%;
+}
+/* Measure intrinsic field widths without narrowing dates or breaking a city
+   into isolated characters. These probes never enter the page fragments. */
+.resume-preview .entry-first-row.entry-width-probe {
+  position: absolute;
+  visibility: hidden;
+  display: flex !important;
+  width: max-content !important;
+  max-width: none;
+}
+.resume-preview .entry-width-probe > :is(.entry-title-group, .entry-date) {
+  flex: none;
+  width: max-content;
+  max-width: none;
+  min-width: 0;
+  white-space: nowrap;
+}
+.resume-preview .entry-width-probe .entry-title-group {
+  flex-wrap: nowrap;
+}
+.resume-preview .entry-width-probe .entry-title-group > * {
+  max-width: none;
+  white-space: nowrap;
+}
+/* If fields cannot share a row, move the whole metadata block. */
+.resume-preview[data-entry-layout="one"] .entry-heading[data-metadata-row] .entry-first-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px 8px;
+}
+.resume-preview[data-entry-layout="one"] .entry-heading[data-metadata-row] .entry-title-group {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+}
+.resume-preview[data-entry-layout="one"] .entry-heading[data-metadata-row] .entry-date {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: end;
+}
+.resume-preview[data-entry-layout="one"][data-entry-meta-align="left"]
+  .entry-heading[data-metadata-row]
+  .entry-date {
+  justify-self: start;
 }
 /* Inline fields share a real row. Equal alignments form one text group;
    separate center fields keep symmetric side tracks around the page midpoint. */
