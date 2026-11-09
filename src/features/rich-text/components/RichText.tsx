@@ -18,7 +18,9 @@ import {
   Undo2,
   X,
 } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import type { Resume } from "@resume/model";
+import { bulletMarkers } from "@resume/list-markers";
 import { Button, IconButton, TextField } from "@/shared/ui";
 import { blockTags, safeLink, sanitizeRichText } from "../lib/sanitize";
 import { bookmark, restoreBookmark, type Bookmark, type Snapshot } from "../lib/selection";
@@ -27,10 +29,12 @@ export default function RichText({
   value,
   onChange,
   label = "经历描述",
+  bulletStyle = "disc",
 }: {
   value: string;
   onChange: (html: string) => void;
   label?: string;
+  bulletStyle?: Resume["style"]["bulletStyle"];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const savedSelection = useRef<Bookmark | null>(null);
@@ -341,23 +345,29 @@ export default function RichText({
                 <X size={14} />
               </IconButton>
             </div>
-            <TextField.Root
-              id={`${linkId}-url`}
-              ref={linkInput}
-              type="text"
-              value={linkUrl}
-              placeholder="https://example.com"
-              autoComplete="off"
-              inputMode="url"
-              spellCheck={false}
-              aria-invalid={Boolean(linkError)}
-              aria-describedby={linkError ? `${linkId}-error` : `${linkId}-hint`}
-              className="rich-link-input"
-              onChange={(event) => {
-                setLinkUrl(event.target.value);
-                setLinkError("");
-              }}
-            />
+            <div className="rich-link-row">
+              <TextField.Root
+                id={`${linkId}-url`}
+                ref={linkInput}
+                type="text"
+                value={linkUrl}
+                placeholder="https://example.com"
+                autoComplete="off"
+                inputMode="url"
+                spellCheck={false}
+                aria-invalid={Boolean(linkError)}
+                aria-describedby={linkError ? `${linkId}-error` : `${linkId}-hint`}
+                className="rich-link-input"
+                onChange={(event) => {
+                  setLinkUrl(event.target.value);
+                  setLinkError("");
+                }}
+              />
+              <Button type="submit" variant="solid" aria-label="应用链接">
+                <Check size={14} aria-hidden="true" />
+                应用链接
+              </Button>
+            </div>
             {linkError && (
               <span id={`${linkId}-error`} role="alert" className="rich-link-error">
                 {linkError}
@@ -366,15 +376,6 @@ export default function RichText({
             <p id={`${linkId}-hint`} className="rich-link-hint">
               为选中文字添加链接；未选中文字时插入链接地址。
             </p>
-            <div className="rich-link-actions">
-              <Button aria-label="取消链接设置" onClick={closeLink}>
-                取消
-              </Button>
-              <Button type="submit" variant="solid" aria-label="应用链接">
-                <Check size={14} aria-hidden="true" />
-                应用链接
-              </Button>
-            </div>
           </form>
         )}
         <div
@@ -383,6 +384,14 @@ export default function RichText({
           aria-label={label}
           aria-multiline="true"
           className="rich-content"
+          style={
+            Object.fromEntries(
+              bulletMarkers(bulletStyle).map((marker, index) => [
+                `--list-marker-${index + 1}`,
+                marker === "diamond" ? '"◆  "' : marker,
+              ]),
+            ) as CSSProperties
+          }
           contentEditable
           suppressContentEditableWarning
           data-placeholder="用具体的行动、数据和结果，讲好你的经历…"

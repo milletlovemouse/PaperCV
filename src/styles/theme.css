@@ -244,10 +244,6 @@
   border-color: transparent;
   box-shadow: none;
 }
-.editor-theme .module-header-actions > .rt-TextFieldRoot:focus-within {
-  outline: 1px solid var(--ui-focus);
-  outline-offset: 1px;
-}
 .editor-theme .module-header-actions .rt-TextFieldInput {
   padding-inline: 0;
   background: transparent;
@@ -877,6 +873,7 @@
 .rich-link-form .rich-link-input {
   width: 100%;
   min-width: 0;
+  flex: 1;
 }
 .rich-link-hint,
 .rich-link-error {
@@ -893,13 +890,13 @@
   font-size: 11px;
   font-weight: 500;
 }
-.rich-link-actions {
+.rich-link-row {
   display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
   gap: 8px;
 }
-.rich-link-actions > button {
+.rich-link-row > button {
   min-width: 64px;
   flex-shrink: 0;
   padding-inline: 14px;

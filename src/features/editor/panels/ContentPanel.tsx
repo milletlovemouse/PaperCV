@@ -266,7 +266,12 @@ export default function ContentPanel({
                             </IconButton>
                           </div>
                         </div>
-                        <EntryForm section={section} entry={entry} entryUpdate={entryUpdate} />
+                        <EntryForm
+                          section={section}
+                          entry={entry}
+                          entryUpdate={entryUpdate}
+                          bulletStyle={resume.style.bulletStyle}
+                        />
                       </div>
                     ))}
                     <button

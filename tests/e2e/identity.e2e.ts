@@ -748,7 +748,8 @@ try {
       for (const bodyAlign of ["left", "center", "right"] as const) {
         await update({
           entry: {
-            description: "<ul><li>一级标记<ul><li>二级标记</li></ul></li></ul><ol><li>有序项目</li></ol>",
+            description:
+              "<ul><li>一级标记<ul><li>二级标记<ul><li>三级标记</li></ul></li></ul></li></ul><ol><li>有序项目</li></ol>",
           },
           style: {
             ...STANDARD_STYLE,
@@ -768,7 +769,15 @@ try {
             return {
               markers: unordered.map((node) => {
                 const css = getComputedStyle(node, "::before");
-                return [css.content, css.width, css.height, css.backgroundColor, css.border, css.transform];
+                return [
+                  css.content,
+                  css.width,
+                  css.height,
+                  css.backgroundColor,
+                  css.border,
+                  css.transform,
+                  css.borderRadius,
+                ];
               }),
               ordered: getComputedStyle(
                 paper.querySelector('.bullet-unit[data-list-kind="ordered"]')!,
@@ -779,11 +788,11 @@ try {
             };
           });
         const label = `${template.id}/${bulletStyle}/${bodyAlign}`;
-        assert.equal(actual.markers.length, 2, label);
-        assert.deepEqual(
-          actual.markers[0],
-          actual.markers[1],
-          `${label}: nested marks retain selected shape`,
+        assert.equal(actual.markers.length, 3, label);
+        assert.equal(
+          new Set(actual.markers.map((marker) => JSON.stringify(marker))).size,
+          3,
+          `${label}: each level has a distinct shape`,
         );
         assert.equal(actual.markers[0][0], '""', `${label}: use geometry instead of a font glyph`);
         assert.equal(actual.markers[0][1], "5px", `${label}: obey marker size`);
@@ -792,11 +801,27 @@ try {
         assert.equal(actual.headerGap, "35px", `${label}: header gap applies to every template`);
         assert.equal(actual.headingGap, "19px", `${label}: module title gap applies to every template`);
         await page.emulateMedia({ media: "print" });
-        const printedMarker = await page
+        const printedMarkers = await page
           .locator('.paper-page .bullet-unit[data-list-kind="unordered"]')
-          .first()
-          .evaluate((node) => getComputedStyle(node, "::before").width);
-        assert.equal(printedMarker, "5px", `${label}: print retains marker geometry`);
+          .evaluateAll((nodes) =>
+            nodes.map((node) => {
+              const css = getComputedStyle(node, "::before");
+              return [
+                css.content,
+                css.width,
+                css.height,
+                css.backgroundColor,
+                css.border,
+                css.transform,
+                css.borderRadius,
+              ];
+            }),
+          );
+        assert.deepEqual(
+          printedMarkers,
+          actual.markers,
+          `${label}: print retains every level's marker geometry`,
+        );
         await page.emulateMedia({ media: "screen" });
       }
       for (const skillStyle of ["icons", "tags"] as const) {

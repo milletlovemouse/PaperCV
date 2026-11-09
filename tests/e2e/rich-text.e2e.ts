@@ -55,9 +55,10 @@ await page.route("**/__rich-text-test", (route) =>
       const setDescription = html => setResume(value => ({ ...value,
         sections: [{ ...value.sections[0], entries: [{ ...value.sections[0].entries[0], description: html }] }] }));
       window.fixture = { setDescription, setTemplate: template => setResume(value => ({
-        ...value, style: { ...value.style, template } })) };
+        ...value, style: { ...value.style, template } })),
+        setBulletStyle: bulletStyle => setResume(value => ({ ...value, style: { ...value.style, bulletStyle } })) };
       return React.createElement("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)", gap: "24px" } },
-        React.createElement(RichText, { value: resume.sections[0].entries[0].description, onChange: setDescription }),
+        React.createElement(RichText, { value: resume.sections[0].entries[0].description, onChange: setDescription, bulletStyle: resume.style.bulletStyle }),
         React.createElement(ResumePreview, { resume }));
     }
     ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(Theme, { appearance: "light", accentColor: "gray", className: "editor-theme" }, React.createElement(Fixture)));
@@ -222,7 +223,7 @@ try {
   );
   assert.deepEqual(
     (await metrics()).slice(2).map((row) => row.marker),
-    ["1.", "1."],
+    ["1.", "a."],
   );
   assert.equal(await rows.first().evaluate((node) => getComputedStyle(node).textAlign), "right");
   console.log("PASS paragraph margins accumulate; blockquotes, alignment and ordered lists survive");
@@ -261,6 +262,147 @@ try {
   await editor.press("Shift+Tab");
   assert.equal((await metrics())[0].indent, 0);
   console.log("PASS paragraph keyboard indentation reaches preview");
+
+  for (const [style, shapes] of [
+    ["disc", ["disc", "circle", "square"]],
+    ["circle", ["circle", "disc", "square"]],
+    ["square", ["square", "circle", "disc"]],
+    ["diamond", ["diamond", "circle", "square"]],
+  ] as const) {
+    await page.evaluate((style) => {
+      (window as unknown as { fixture: { setBulletStyle: (style: string) => void } }).fixture.setBulletStyle(
+        style,
+      );
+    }, style);
+    await setDescription(
+      "<blockquote><ul><li>一级<ul><li>二级<ul><li>三级</li></ul></li></ul></li></ul></blockquote>",
+    );
+    assert.deepEqual(
+      await rows.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-bullet-marker"))),
+      shapes,
+    );
+    assert.deepEqual(
+      await rows.evaluateAll((nodes) => nodes.map((node) => node.getAttribute("data-list-depth"))),
+      ["0", "1", "2"],
+      "blockquote indentation must not change list levels",
+    );
+    assert.deepEqual(
+      await editor
+        .locator("ul")
+        .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).listStyleType)),
+      shapes.map((shape) => (shape === "diamond" ? '"◆  "' : shape)),
+    );
+    const geometry = await rows.evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        fill: getComputedStyle(node, "::before").backgroundColor,
+        border: getComputedStyle(node, "::before").borderTopWidth,
+        radius: getComputedStyle(node, "::before").borderRadius,
+        transform: getComputedStyle(node, "::before").transform,
+      })),
+    );
+    assert.equal(new Set(geometry.map((shape) => JSON.stringify(shape))).size, 3);
+  }
+  await page.evaluate(() => {
+    (window as unknown as { fixture: { setBulletStyle: (style: string) => void } }).fixture.setBulletStyle(
+      "disc",
+    );
+  });
+  await setDescription(
+    "<ol><li>一级<ol><li>二级<ol><li>三级一</li><li>三级二</li><li>三级三</li><li>三级四</li></ol></li><li>二级第二项</li></ol></li><li>一级第二项</li></ol>",
+  );
+  assert.deepEqual(
+    (await metrics()).map((row) => row.marker),
+    ["1.", "a.", "i.", "ii.", "iii.", "iv.", "b.", "2."],
+  );
+  assert.deepEqual(
+    await editor
+      .locator("ol")
+      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).listStyleType)),
+    ["decimal", "lower-alpha", "lower-roman"],
+  );
+  for (const media of ["screen", "print"] as const) {
+    await page.emulateMedia({ media });
+    assert.ok(
+      await rows.evaluateAll((nodes) =>
+        nodes.every((node) => {
+          const style = getComputedStyle(node);
+          const marker = getComputedStyle(node, "::before");
+          return parseFloat(style.paddingLeft) >= parseFloat(marker.left) + parseFloat(marker.width) + 5;
+        }),
+      ),
+      "ordered markers must have room before the text",
+    );
+  }
+  await page.emulateMedia({ media: "screen" });
+  assert.ok(
+    await rows.evaluateAll(
+      (nodes) =>
+        new Set(
+          nodes
+            .slice(2, 6)
+            .map((node) => node.querySelector(".description-text")!.getBoundingClientRect().left),
+        ).size === 1,
+    ),
+    "Roman markers of different lengths keep sibling text aligned",
+  );
+  await mkdir("output/qa", { recursive: true });
+  await page.screenshot({ path: "output/qa/list-hierarchy.png", fullPage: true });
+  await setDescription(
+    "<ul><li>一级无序<ol><li><p>二级有序</p><p>同项续段</p><ul><li>三级无序</li></ul></li></ol></li></ul>",
+  );
+  assert.deepEqual(
+    (await metrics()).map((row) => row.marker),
+    [undefined, "a.", "a.", undefined],
+  );
+  assert.deepEqual(
+    (await metrics()).map((row) => row.bullet),
+    [true, true, false, true],
+  );
+  assert.deepEqual(
+    await editor
+      .locator("ul, ol")
+      .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).listStyleType)),
+    ["disc", "lower-alpha", "square"],
+  );
+  assert.ok(
+    await rows.evaluateAll(
+      (nodes) =>
+        Math.abs(
+          nodes[1].querySelector(".description-text")!.getBoundingClientRect().left -
+            nodes[2].querySelector(".description-text")!.getBoundingClientRect().left,
+        ) <= 1,
+    ),
+    "ordered continuation paragraphs align with the text, without another marker",
+  );
+  console.log(
+    "PASS three-level bullet shapes and decimal/alphabetic/Roman numbering agree in editor, preview and print",
+  );
+
+  for (const width of [1400, 360]) {
+    await page.setViewportSize({ width, height: 1100 });
+    await setDescription(
+      "<ul><li>一级无序列表<ul><li>二级无序列表<ul><li>三级无序列表</li></ul></li></ul></li></ul>" +
+        "<ol><li>一级有序列表<ol><li>二级有序列表<ol><li>三级有序列表</li></ol></li></ol></li></ol>",
+    );
+    const starts = await editor.locator("li").evaluateAll((items) =>
+      items.map((item) => {
+        const range = document.createRange();
+        range.selectNodeContents(item.firstChild!);
+        return range.getBoundingClientRect().left;
+      }),
+    );
+    assert.deepEqual(
+      starts.slice(0, 3),
+      starts.slice(3),
+      "ordered and unordered text start at the same position at every depth",
+    );
+    assert.ok(starts[0] < starts[1] && starts[1] < starts[2]);
+    await page.locator(".rich-box").screenshot({ path: `output/qa/list-editor-alignment-${width}.png` });
+  }
+  await page.setViewportSize({ width: 1400, height: 1100 });
+  console.log(
+    "PASS ordered and unordered editor lists share text columns at all three levels on desktop/mobile",
+  );
 
   await setDescription("<p>中文斜体测试</p>");
   await page.evaluate(() => document.fonts.ready);
@@ -337,9 +479,13 @@ try {
       const apply = page.getByRole("button", { name: "应用链接", exact: true });
       const buttonBounds = await apply.boundingBox();
       assert.ok(bounds && inputBounds && buttonBounds);
-      assert.ok(inputBounds.width >= bounds.width - 30);
-      assert.ok(buttonBounds.y > inputBounds.y + inputBounds.height);
+      assert.ok(inputBounds.width >= bounds.width - buttonBounds.width - 40);
+      assert.ok(
+        Math.abs(buttonBounds.y + buttonBounds.height / 2 - inputBounds.y - inputBounds.height / 2) <= 1,
+      );
+      assert.ok(buttonBounds.x >= inputBounds.x + inputBounds.width + 7);
       assert.ok(buttonBounds.x + buttonBounds.width <= bounds.x + bounds.width);
+      assert.equal(await page.getByRole("button", { name: "取消链接设置", exact: true }).count(), 0);
       assert.ok(
         await apply.evaluate(
           (button) =>

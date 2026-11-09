@@ -196,6 +196,7 @@ function EntryContent({
           standard={style.template === "classic"}
           bodyAlign={resolveStyleOptions(style).bodyAlign}
           skillStyle={style.skillStyle}
+          bulletStyle={style.bulletStyle}
         />
       )}
       {!isLast && <div className="resume-unit entry-spacer" />}

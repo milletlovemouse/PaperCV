@@ -3,14 +3,15 @@ import DateField from "@/shared/ui/DateField";
 import { Checkbox, Field, SelectField } from "@/shared/ui";
 import RichText from "@/features/rich-text/components/RichText";
 
-import type { Entry, Section } from "@resume/model";
+import type { Entry, Section, Resume } from "@resume/model";
 import type { EntryUpdater } from "../types";
 interface Props {
   section: Section;
   entry: Entry;
   entryUpdate: EntryUpdater;
+  bulletStyle: Resume["style"]["bulletStyle"];
 }
-export default function EntryForm({ section, entry, entryUpdate }: Props) {
+export default function EntryForm({ section, entry, entryUpdate, bulletStyle }: Props) {
   return (
     <>
       {!isTextSection(section.kind) && (
@@ -107,6 +108,7 @@ export default function EntryForm({ section, entry, entryUpdate }: Props) {
         </div>
       )}
       <RichText
+        bulletStyle={bulletStyle}
         label={
           isTextSection(section.kind)
             ? section.kind === "skills"

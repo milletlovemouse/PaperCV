@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Resume } from "@resume/model";
+import { bulletMarkers, formatListOrdinal } from "@resume/list-markers";
 import { sanitizeRichText } from "@/features/rich-text/lib/sanitize";
 
 export default function Description({
@@ -10,6 +11,7 @@ export default function Description({
   standard = false,
   bodyAlign = "auto",
   skillStyle = "text",
+  bulletStyle = "disc",
 }: {
   html: string;
   sectionId: string;
@@ -18,6 +20,7 @@ export default function Description({
   standard?: boolean;
   bodyAlign?: Resume["style"]["bodyAlign"];
   skillStyle?: Resume["style"]["skillStyle"];
+  bulletStyle?: Resume["style"]["bulletStyle"];
 }) {
   const parsed = new DOMParser().parseFromString(sanitizeRichText(html), "text/html");
   const parts: Array<{
@@ -25,12 +28,14 @@ export default function Description({
     bullet: boolean;
     listItem?: boolean;
     order?: number;
+    markerWidth?: string;
     depth: number;
+    listDepth: number;
     align?: CSSProperties["textAlign"];
     indent?: number;
   }> = [];
   type Formatting = { align?: CSSProperties["textAlign"]; indent?: number };
-  type Marker = { order?: number; pending: boolean };
+  type Marker = { order?: number; width?: string; pending: boolean };
   function collect(node: Node, depth = 0, inherited: Formatting = {}, marker?: Marker, listDepth = 0) {
     const formatting =
       node instanceof HTMLElement
@@ -46,11 +51,25 @@ export default function Description({
         : inherited;
     if (node instanceof HTMLElement && ["UL", "OL"].includes(node.tagName)) {
       const nestedDepth = depth + (listDepth > 0 ? 1 : 0);
+      const children = Array.from(node.children);
+      // Reserve the same space for every number in a list, including its
+      // continuation paragraphs, even when decimal/roman markers grow longer.
+      const count = children.filter((child) => child.tagName === "LI").length;
+      let width = 2;
+      if (node.tagName === "OL") {
+        for (let order = 1; order <= count; order++) {
+          width = Math.max(width, formatListOrdinal(order, listDepth).length);
+        }
+      }
       let index = 0;
-      Array.from(node.children).forEach((child) => {
+      children.forEach((child) => {
         const itemMarker =
           child.tagName === "LI"
-            ? { pending: true, order: node.tagName === "OL" ? ++index : undefined }
+            ? {
+                pending: true,
+                order: node.tagName === "OL" ? ++index : undefined,
+                width: `${width * 0.65}em`,
+              }
             : undefined;
         collect(child, nestedDepth, formatting, itemMarker, listDepth + 1);
       });
@@ -67,7 +86,9 @@ export default function Description({
             bullet: Boolean(marker?.pending),
             listItem: Boolean(marker),
             order: marker?.order,
+            markerWidth: marker?.width,
             depth: contentDepth,
+            listDepth: Math.max(0, listDepth - 1),
             ...formatting,
           });
           if (marker) marker.pending = false;
@@ -93,38 +114,57 @@ export default function Description({
         bullet: Boolean(marker?.pending),
         listItem: Boolean(marker),
         order: marker?.order,
+        markerWidth: marker?.width,
         depth,
+        listDepth: Math.max(0, listDepth - 1),
         ...formatting,
       });
       if (marker) marker.pending = false;
     }
   }
   Array.from(parsed.body.childNodes).forEach((node) => collect(node));
+  const markers = bulletMarkers(bulletStyle);
   return (
     <>
-      {parts.map((part, index) => (
-        <div
-          key={index}
-          className={`resume-unit body-unit kind-${kind} ${part.bullet && (kind !== "skills" || skillStyle === "text") ? "bullet-unit" : ""}`}
-          style={
-            {
-              textAlign: part.align,
-              "--rich-indent": `${part.depth * (standard ? 20 : 16) + (part.indent || 0) + (part.listItem && !part.bullet ? (standard ? 20 : 13) : 0)}px`,
-            } as CSSProperties
-          }
-          data-section={sectionId}
-          data-entry={entryId}
-          data-splittable="true"
-          data-list-depth={part.depth}
-          data-list-kind={part.order ? "ordered" : "unordered"}
-          data-marker={part.order ? `${part.order}.` : undefined}
-          data-list-align={
-            part.bullet && (kind !== "skills" || skillStyle === "text") ? part.align || bodyAlign : undefined
-          }
-        >
-          <span className="description-text" dangerouslySetInnerHTML={{ __html: part.html }} />
-        </div>
-      ))}
+      {parts.map((part, index) => {
+        const marker = part.order ? formatListOrdinal(part.order, part.listDepth) : undefined;
+        const markerWidth = marker ? part.markerWidth : undefined;
+        const inset = part.depth * (standard ? 20 : 16) + (part.indent || 0);
+        return (
+          <div
+            key={index}
+            className={`resume-unit body-unit kind-${kind} ${part.bullet && (kind !== "skills" || skillStyle === "text") ? "bullet-unit" : ""}`}
+            style={
+              {
+                textAlign: part.align,
+                "--rich-indent":
+                  part.listItem && !part.bullet
+                    ? markerWidth
+                      ? `calc(${inset}px + ${markerWidth} + 6px)`
+                      : `${inset + (standard ? 20 : 13)}px`
+                    : `${inset}px`,
+                "--list-marker-width": markerWidth,
+              } as CSSProperties
+            }
+            data-section={sectionId}
+            data-entry={entryId}
+            data-splittable="true"
+            data-list-depth={part.listDepth}
+            data-list-kind={part.order ? "ordered" : "unordered"}
+            data-bullet-marker={
+              part.listItem && !part.order ? markers[Math.min(2, part.listDepth)] : undefined
+            }
+            data-marker={marker}
+            data-list-align={
+              part.bullet && (kind !== "skills" || skillStyle === "text")
+                ? part.align || bodyAlign
+                : undefined
+            }
+          >
+            <span className="description-text" dangerouslySetInnerHTML={{ __html: part.html }} />
+          </div>
+        );
+      })}
     </>
   );
 }

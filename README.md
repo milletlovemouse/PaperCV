@@ -22,7 +22,7 @@
 
 <br />
 
-![纸简编辑器预览](assets/readme/editor-preview.jpg)
+![纸简编辑器预览](assets/readme/editor-preview.png)
 
 ## 功能亮点
 
