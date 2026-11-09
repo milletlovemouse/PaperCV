@@ -137,6 +137,30 @@ try {
       template.template,
     );
     await assertGeometry();
+    const typographyIssues = await page.locator(".preview-scroll .paper-page").evaluateAll((pages, sizes) => {
+      const issues: string[] = [];
+      const groups: Array<[string, number]> = [
+        [".resume-name", sizes.nameSize],
+        [".section-title", sizes.sectionSize],
+        [".entry-first-row > strong", sizes.entryTitleSize],
+        [
+          ".body-unit, .resume-contact, .resume-role, .entry-date, .entry-subtitle, .entry-secondary-meta, .school-tags",
+          sizes.fontSize,
+        ],
+      ];
+      for (const paper of pages)
+        for (const [selector, expected] of groups)
+          for (const node of paper.querySelectorAll(selector))
+            if (Math.abs(parseFloat(getComputedStyle(node).fontSize) - expected) > 0.01)
+              issues.push(`${selector}: ${getComputedStyle(node).fontSize} / ${expected}`);
+      if (sizes.infoStyle !== "auto" && sizes.infoStyle !== "labels")
+        for (const paper of pages)
+          for (const label of paper.querySelectorAll(".contact-label"))
+            if (getComputedStyle(label).display !== "none")
+              issues.push(`${sizes.infoStyle}: unexpected contact label`);
+      return issues;
+    }, template.defaults);
+    assert.deepEqual(typographyIssues, [], `${template.id}: all four text levels match the preset`);
     if (template.id === "sidebar") {
       const heading = await page
         .locator(".preview-scroll .paper-page .sidebar-document .entry-heading")

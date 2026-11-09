@@ -4,6 +4,7 @@ import { useId } from "react";
 export function UISelect({
   label,
   value,
+  displayValue = value,
   options,
   onChange,
   disabled = false,
@@ -12,6 +13,7 @@ export function UISelect({
 }: {
   label: string;
   value: string;
+  displayValue?: string;
   options: ReadonlyArray<readonly [string, string]>;
   onChange: (value: string) => void;
   disabled?: boolean;
@@ -23,7 +25,7 @@ export function UISelect({
     <Select.Root
       size={size === "compact" ? "1" : "2"}
       disabled={disabled}
-      value={value || "__empty__"}
+      value={displayValue || "__empty__"}
       onValueChange={(value) => onChange(value === "__empty__" ? "" : value)}
     >
       <Select.Trigger
@@ -41,7 +43,21 @@ export function UISelect({
         variant="soft"
       >
         {options.map(([key, text]) => (
-          <Select.Item key={key || "__empty__"} value={key || "__empty__"}>
+          <Select.Item
+            key={key || "__empty__"}
+            value={key || "__empty__"}
+            onPointerUp={(event) => {
+              if (event.button === 0 && value !== displayValue && key === displayValue) onChange(key);
+            }}
+            onKeyDown={(event) => {
+              if (
+                (event.key === "Enter" || event.key === " ") &&
+                value !== displayValue &&
+                key === displayValue
+              )
+                onChange(key);
+            }}
+          >
             {text}
           </Select.Item>
         ))}

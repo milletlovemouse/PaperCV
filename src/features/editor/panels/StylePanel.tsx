@@ -1,12 +1,13 @@
-import { ArrowRight, Check, Maximize2, Plus } from "lucide-react";
+import { ArrowRight, Check, Maximize2, Plus, RotateCcw } from "lucide-react";
 import { LAYOUT_DEFAULTS, PRESENTATION_DEFAULTS, type Resume } from "@resume/model";
 import { ORIGINAL_PDF_STYLE, STANDARD_STYLE } from "@resume/templates";
-import { Button, ChoiceGroup, ChoiceItem, LayoutOptions, SwitchField } from "@/shared/ui";
+import { Button, ChoiceGroup, ChoiceItem, Disclosure, LayoutOptions, SwitchField } from "@/shared/ui";
 import EntryStyleSettings from "../components/style/EntryStyleSettings";
 import IdentityStyleSettings from "../components/style/IdentityStyleSettings";
 import ModuleStyleSettings from "../components/style/ModuleStyleSettings";
 import { ChoiceChips } from "../components/style/StyleControls";
 import TypographySettings from "../components/style/TypographySettings";
+import { styleOptionValues } from "../components/style/style-option-values";
 
 import type { ResumeUpdater } from "../types";
 
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export default function StylePanel({ resume, update, fitOnePage }: Props) {
+  const choices = styleOptionValues(resume.style);
   const style = (key: keyof Resume["style"], value: string | number | boolean) =>
     update((r) => ({ ...r, style: { ...r.style, [key]: value } }));
   return (
@@ -35,28 +37,26 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
         >
           应用原稿 PDF 排版
         </Button>
+        <Button
+          className="button secondary style-reset-button"
+          onClick={() =>
+            update(
+              (r) => ({ ...r, style: { ...r.style, ...LAYOUT_DEFAULTS, ...PRESENTATION_DEFAULTS } }),
+              true,
+            )
+          }
+        >
+          <RotateCcw size={16} aria-hidden="true" />
+          恢复模板默认
+        </Button>
       </div>
       <p className="setting-note">标准排版参照网页预览；原稿 PDF 排版使用上传原稿的字号、留白与菱形列表。</p>
-      <div className="style-group layout-controls">
-        <h3>
-          布局样式
-          <button
-            className="layout-reset"
-            onClick={() =>
-              update(
-                (r) => ({ ...r, style: { ...r.style, ...LAYOUT_DEFAULTS, ...PRESENTATION_DEFAULTS } }),
-                true,
-              )
-            }
-          >
-            恢复模板默认
-          </button>
-        </h3>
+      <Disclosure className="style-details layout-controls" title="布局与对齐" defaultOpen>
         <LayoutOptions
           label="页眉布局"
           value={resume.style.headerLayout}
+          displayValue={choices.headerLayout}
           options={[
-            ["auto", "默认"],
             ["stacked", "上下排列"],
             ["split", "左右分列"],
             ["inline", "姓名横排"],
@@ -66,23 +66,46 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
         <LayoutOptions
           label="姓名与求职意向"
           value={resume.style.nameAlign}
+          displayValue={choices.nameAlign}
           onChange={(value) => style("nameAlign", value)}
         />
         <LayoutOptions
           label="联系方式对齐"
           value={resume.style.contactAlign}
+          displayValue={choices.contactAlign}
           onChange={(value) => style("contactAlign", value)}
         />
         <LayoutOptions
           label="模块标题对齐"
           value={resume.style.sectionAlign}
+          displayValue={choices.sectionAlign}
           onChange={(value) => style("sectionAlign", value)}
+        />
+        <LayoutOptions
+          label="经历主标题对齐"
+          value={resume.style.entryTitleAlign || "left"}
+          options={[
+            ["left", "居左"],
+            ["center", "居中"],
+            ["right", "居右"],
+          ]}
+          onChange={(value) => style("entryTitleAlign", value)}
+        />
+        <LayoutOptions
+          label="经历副标题对齐"
+          value={resume.style.entrySubtitleAlign || "left"}
+          options={[
+            ["left", "居左"],
+            ["center", "居中"],
+            ["right", "居右"],
+          ]}
+          onChange={(value) => style("entrySubtitleAlign", value)}
         />
         <LayoutOptions
           label="正文对齐"
           value={resume.style.bodyAlign}
+          displayValue={choices.bodyAlign}
           options={[
-            ["auto", "默认"],
             ["left", "居左"],
             ["center", "居中"],
             ["right", "居右"],
@@ -90,25 +113,14 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
           ]}
           onChange={(value) => style("bodyAlign", value)}
         />
-        <LayoutOptions
-          label="标题样式"
-          value={resume.style.headingStyle}
-          options={[
-            ["auto", "默认"],
-            ["line", "下划线"],
-            ["tint", "色块"],
-            ["plain", "纯文字"],
-          ]}
-          onChange={(value) => style("headingStyle", value)}
-        />
-        <p className="setting-note">默认跟随当前模板。对齐作用于所在栏，调整后会重新分页。</p>
-      </div>
-      <EntryStyleSettings resume={resume} style={style} />
+        <p className="setting-note">对齐作用于所在栏，调整后会重新分页。</p>
+      </Disclosure>
+      <TypographySettings resume={resume} style={style} />
       <IdentityStyleSettings resume={resume} style={style} />
       <ModuleStyleSettings resume={resume} style={style} />
-      <TypographySettings resume={resume} style={style} />
-      <div className="style-group">
-        <h3>主题色</h3>
+      <EntryStyleSettings resume={resume} style={style} />
+      <Disclosure className="style-details style-appearance-group" title="颜色与纸张" defaultOpen>
+        <h4>主题色</h4>
         <ChoiceGroup
           label="主题色"
           className="color-swatches"
@@ -136,9 +148,7 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
             />
           </label>
         </ChoiceGroup>
-      </div>
-      <div className="style-group">
-        <h3>纸张设置</h3>
+        <h4 className="appearance-subheading">纸张设置</h4>
         <ChoiceGroup
           label="纸张尺寸"
           className="paper-options"
@@ -161,19 +171,19 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
           checked={resume.style.showPageNumbers}
           onChange={(checked) => style("showPageNumbers", checked)}
         />
-      </div>
-      <ChoiceChips
-        label="纸张风格"
-        value={resume.style.paperStyle}
-        options={[
-          ["plain", "普通"],
-          ["frame", "规整边框"],
-          ["rail", "侧边装饰"],
-          ["soft", "清透底色"],
-          ["corner", "个性角标"],
-        ]}
-        onChange={(value) => style("paperStyle", value)}
-      />
+        <ChoiceChips
+          label="纸张风格"
+          value={resume.style.paperStyle}
+          options={[
+            ["plain", "普通"],
+            ["frame", "规整边框"],
+            ["rail", "侧边装饰"],
+            ["soft", "清透底色"],
+            ["corner", "个性角标"],
+          ]}
+          onChange={(value) => style("paperStyle", value)}
+        />
+      </Disclosure>
       <Button className="button fit-button" onClick={fitOnePage}>
         <Maximize2 size={16} />
         适配为一页

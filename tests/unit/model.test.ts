@@ -19,12 +19,16 @@ test("untrusted settings are clamped and remote avatars are discarded", () => {
   raw.style.fontSize = 100;
   raw.style.margin = -20;
   raw.style.lineHeight = NaN;
+  raw.style.sectionSize = 100;
+  raw.style.entryTitleSize = 1;
   raw.profile.avatar = "https://example.com/tracker.png";
   raw.style.accent = 'red"; background:url(https://example.com)';
   const r = normalizeResume(raw);
   assert.equal(r.style.fontSize, 16);
   assert.equal(r.style.margin, 6);
   assert.equal(r.style.lineHeight, 1.65);
+  assert.equal(r.style.sectionSize, 24);
+  assert.equal(r.style.entryTitleSize, 9);
   assert.equal(r.profile.avatar, "");
   assert.equal(r.style.accent, "#34584b");
 });

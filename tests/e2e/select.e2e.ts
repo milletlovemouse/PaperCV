@@ -46,12 +46,16 @@ try {
             const h = React.createElement;
             function Fixture() {
               const [degree, setDegree] = React.useState("自定义学历");
+              const [format, setFormat] = React.useState("template");
               const [month, setMonth] = React.useState("2023-07");
               const [day, setDay] = React.useState("1999-12-05");
               return h(Theme, { appearance: "${theme}", accentColor: "gray", className: "editor-theme" },
                 h("main", { style: { width: "min(340px, calc(100vw - 48px))", margin: "0 auto", paddingTop: 40, display: "grid", gap: 20 } },
                   h(SelectField, { label: "学历", value: degree, options: ["本科", "硕士", "博士"], onChange: setDegree }),
                   h(UISelect, { label: "禁用选择", value: "disabled", options: [["disabled", "不可选择"]], disabled: true, onChange: () => {} }),
+                  h(UISelect, { label: "日期格式", value: format, displayValue: format === "template" ? "numeric" : format, options: [["numeric", "2026.01"], ["chinese", "2026年1月"]], onChange: setFormat }),
+                  h("output", { "data-testid": "format-value" }, format),
+                  h("button", { type: "button", onClick: () => setFormat("template") }, "恢复继承格式"),
                   h(DateField, { label: "年月", value: month, onChange: setMonth }),
                   h(DateField, { label: "具体日期", value: day, onChange: setDay }),
                   h(DateField, { label: "结束时间", value: "至今", disabled: true, onChange: () => {} }),
@@ -89,6 +93,20 @@ try {
         await menu.getByRole("option", { name: "硕士", exact: true }).click();
         await menu.waitFor({ state: "hidden" });
         assert.equal(await degree.innerText(), "硕士");
+
+        const format = page.getByRole("combobox", { name: "日期格式", exact: true });
+        assert.equal(await format.innerText(), "2026.01");
+        await format.click();
+        await menu.getByRole("option", { name: "2026.01", exact: true }).click();
+        await menu.waitFor({ state: "hidden" });
+        assert.equal(await page.getByTestId("format-value").innerText(), "numeric");
+        await page.getByRole("button", { name: "恢复继承格式", exact: true }).click();
+        await format.focus();
+        await format.press("Enter");
+        await menu.waitFor();
+        await page.keyboard.press("Enter");
+        await menu.waitFor({ state: "hidden" });
+        assert.equal(await page.getByTestId("format-value").innerText(), "numeric");
 
         await page.getByRole("textbox", { name: "年月", exact: true }).click();
         await year.click();

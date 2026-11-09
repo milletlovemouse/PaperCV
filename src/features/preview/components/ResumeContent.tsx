@@ -3,6 +3,7 @@ import type { Resume } from "@resume/model";
 import { partitionSections } from "@resume/templates";
 
 import Description from "./Description";
+import EntrySecondaryRow from "./EntrySecondaryRow";
 import Identity from "./Identity";
 
 function SectionHeading({ title, sectionId, number }: { title: string; sectionId: string; number: number }) {
@@ -59,13 +60,14 @@ function ContentSection({
       <SectionHeading title={section.title} sectionId={section.id} number={number} />
       {section.entries
         .filter((entry) => entry.visible !== false)
-        .map((entry) => (
+        .map((entry, entryIndex, entries) => (
           <EntryContent
             key={entry.id}
             entry={entry}
             sectionId={section.id}
             style={style}
             kind={section.kind}
+            isLast={entryIndex === entries.length - 1}
           />
         ))}
     </>
@@ -92,11 +94,13 @@ function EntryContent({
   sectionId,
   style,
   kind,
+  isLast,
 }: {
   entry: Resume["sections"][number]["entries"][number];
   sectionId: string;
   style: Resume["style"];
   kind: Resume["sections"][number]["kind"];
+  isLast: boolean;
 }) {
   const separator = style.entrySeparator === "bar" ? " | " : style.entrySeparator === "none" ? " " : " · ";
   const subtitle = [entry.subtitle, entry.degree, entry.college, entry.educationType, entry.department]
@@ -124,20 +128,9 @@ function EntryContent({
   const secondaryMeta = style.entryPriority === "location" ? date : entry.location;
   const oneLine = style.entryLayout === "one";
   const href = safeURL(entry.url || "");
-  // In auto mode a second piece of metadata gets its own place; the link
-  // becomes a full-width row instead of a second line in the right column.
-  const linkLayout = style.entryLinkLayout || "auto";
   const inlineLink =
-    !oneLine &&
-    Boolean(entry.url) &&
-    hasHeading &&
-    (linkLayout === "inline" || (linkLayout === "auto" && style.template === "classic" && !secondaryMeta));
-  const linkAlign =
-    !style.entryLinkAlign || style.entryLinkAlign === "auto"
-      ? inlineLink
-        ? "right"
-        : "left"
-      : style.entryLinkAlign;
+    !oneLine && Boolean(entry.url) && hasHeading && (style.entryLinkLayout || "inline") === "inline";
+  const linkAlign = style.entryLinkAlign || "right";
   const link = href ? <a href={href}>{entry.url}</a> : entry.url;
   return (
     <>
@@ -162,15 +155,12 @@ function EntryContent({
             </span>
           </div>
           {!oneLine && (subtitle || secondaryMeta || inlineLink) && (
-            <div className="entry-second-row">
-              {subtitle && <span className="entry-subtitle">{subtitle}</span>}
-              {secondaryMeta && <span className="entry-secondary-meta">{secondaryMeta}</span>}
-              {inlineLink && (
-                <span className="entry-inline-link" data-link-align={linkAlign}>
-                  {link}
-                </span>
-              )}
-            </div>
+            <EntrySecondaryRow
+              subtitle={subtitle}
+              metadata={secondaryMeta}
+              link={inlineLink ? link : undefined}
+              style={style}
+            />
           )}
           {entry.schoolTags && (
             <div className="school-tags">
@@ -202,9 +192,11 @@ function EntryContent({
           entryId={entry.id}
           kind={kind}
           standard={style.template === "classic"}
+          bodyAlign={style.bodyAlign}
+          skillStyle={style.skillStyle}
         />
       )}
-      <div className="resume-unit entry-spacer" />
+      {!isLast && <div className="resume-unit entry-spacer" />}
     </>
   );
 }

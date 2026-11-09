@@ -199,7 +199,7 @@ try {
     };
     Object.assign(mock.style, {
       entryPriority: index % 2 ? "location" : "time",
-      entryLinkLayout: ["auto", "inline", "separate"][index],
+      entryLinkLayout: ["inline", "separate", "inline"][index],
       entryLinkAlign: index % 2 ? "left" : "right",
       entryMetaAlign: index % 2 ? "left" : "right",
       entryTitleAlign: index % 2 ? "right" : "left",

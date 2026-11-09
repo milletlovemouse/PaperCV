@@ -3,22 +3,24 @@ import { Disclosure, Range } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 import { ChoiceChips, ColorSetting } from "./StyleControls";
+import { styleOptionValues } from "./style-option-values";
 
 interface Props {
   resume: Resume;
   style: StyleUpdater;
 }
 export default function ModuleStyleSettings({ resume, style }: Props) {
+  const choices = styleOptionValues(resume.style);
   return (
-    <Disclosure className="style-details" title="模块与技能样式">
+    <Disclosure className="style-details" title="模块与列表" defaultOpen>
       <ChoiceChips
-        label="更多模块样式"
+        label="模块标题样式"
         value={resume.style.headingStyle}
+        displayValue={choices.headingStyle}
         options={[
-          ["auto", "模板默认"],
-          ["line", "通用横线"],
-          ["tint", "浅色色块"],
-          ["plain", "精简"],
+          ["line", "下划线"],
+          ["tint", "色块"],
+          ["plain", "纯文字"],
           ["solid", "突出"],
           ["double", "双线"],
           ["dotted", "虚线"],
@@ -47,9 +49,9 @@ export default function ModuleStyleSettings({ resume, style }: Props) {
       />
       <ChoiceChips
         label="无序列表标记"
-        value={resume.style.bulletStyle || "auto"}
+        value={resume.style.bulletStyle}
+        displayValue={choices.bulletStyle}
         options={[
-          ["auto", "模板默认"],
           ["disc", "实心圆"],
           ["circle", "空心圆"],
           ["square", "方形"],

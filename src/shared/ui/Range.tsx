@@ -7,6 +7,7 @@ export function Range({
   max,
   step,
   unit = "",
+  ariaLabel,
   onChange,
 }: {
   label: string;
@@ -15,6 +16,7 @@ export function Range({
   max: number;
   step: number;
   unit?: string;
+  ariaLabel?: string;
   onChange: (value: number) => void;
 }) {
   return (
@@ -39,7 +41,7 @@ export function Range({
         </Slider.Track>
         <Slider.Thumb
           className="ui-slider-thumb"
-          aria-label={label}
+          aria-label={ariaLabel || label}
           aria-valuetext={`${Number(value.toFixed(2))}${unit}`}
         />
       </Slider.Root>

@@ -432,7 +432,8 @@ input[type="file"] {
 .module-header {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: auto;
+  flex: 0 0 auto;
   gap: 10px;
   padding: 16px 15px;
   font-size: 12px;
@@ -440,7 +441,7 @@ input[type="file"] {
   text-align: left;
 }
 .module-header > svg {
-  margin-left: auto;
+  margin-left: 0;
   color: #9ba493;
 }
 .module-icon {
@@ -457,7 +458,27 @@ input[type="file"] {
   font-size: 10px;
   color: #a3ab9a;
   font-weight: 400;
-  margin-left: auto;
+}
+.module-accordion-heading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px 0 0;
+}
+.module-header-actions {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 1px;
+}
+.module-header-actions > .rt-TextFieldRoot {
+  flex: 1 1 auto;
+  min-width: 90px;
+}
+.module-header-actions .icon-button {
+  width: 24px;
+  height: 27px;
 }
 .module-hidden {
   opacity: 0.58;
@@ -1299,6 +1320,15 @@ input[type="file"] {
   font-weight: 600;
   letter-spacing: 0.4px;
   margin-bottom: 18px;
+}
+.style-appearance-group h4 {
+  font-size: 11px;
+  font-weight: 550;
+  color: #7b8a70;
+  margin: 0 0 13px;
+}
+.style-appearance-group .appearance-subheading {
+  margin-top: 24px;
 }
 .style-group > .field {
   margin-bottom: 22px;

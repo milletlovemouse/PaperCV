@@ -1,21 +1,23 @@
 import { type Resume } from "@resume/model";
-import { Disclosure, LayoutOptions, Range } from "@/shared/ui";
+import { Disclosure, LayoutOptions } from "@/shared/ui";
 
 import type { StyleUpdater } from "../../types";
 import { ChoiceChips, ColorSetting } from "./StyleControls";
+import { styleOptionValues } from "./style-option-values";
 
 interface Props {
   resume: Resume;
   style: StyleUpdater;
 }
 export default function IdentityStyleSettings({ resume, style }: Props) {
+  const choices = styleOptionValues(resume.style);
   return (
-    <Disclosure className="style-details" title="头部与基本信息样式">
+    <Disclosure className="style-details" title="页眉与基本信息" defaultOpen>
       <ChoiceChips
         label="头部风格"
         value={resume.style.headerDecoration}
+        displayValue={choices.headerDecoration}
         options={[
-          ["auto", "模板默认"],
           ["plain", "简约"],
           ["rule", "商务横线"],
           ["banner", "突出色块"],
@@ -28,8 +30,8 @@ export default function IdentityStyleSettings({ resume, style }: Props) {
       <ChoiceChips
         label="基本信息样式"
         value={resume.style.infoStyle}
+        displayValue={choices.infoStyle}
         options={[
-          ["auto", "模板默认"],
           ["simple", "简洁"],
           ["labels", "文字"],
           ["icons", "图标"],
@@ -38,15 +40,6 @@ export default function IdentityStyleSettings({ resume, style }: Props) {
           ["tags", "标签"],
         ]}
         onChange={(value) => style("infoStyle", value)}
-      />
-      <Range
-        label="姓名字号"
-        value={resume.style.nameSize}
-        min={20}
-        max={40}
-        step={1}
-        unit="px"
-        onChange={(v) => style("nameSize", v)}
       />
       <LayoutOptions
         label="照片形状"

@@ -67,11 +67,13 @@ export const PRESENTATION_DEFAULTS = {
   entryTitleAlign: "left",
   entrySubtitleAlign: "left",
   entryMetaAlign: "right",
-  entryLinkLayout: "auto",
-  entryLinkAlign: "auto",
+  entryLinkLayout: "inline",
+  entryLinkAlign: "right",
   moduleSpacing: 12,
   entrySpacing: 7,
   nameSize: 20,
+  sectionSize: 14,
+  entryTitleSize: 12,
   photoShape: "rect",
   dividerWidth: 1,
   bulletSize: 3.5,
@@ -172,11 +174,13 @@ export interface Resume {
     entryTitleAlign: "left" | "center" | "right";
     entrySubtitleAlign: "left" | "center" | "right";
     entryMetaAlign: "left" | "right";
-    entryLinkLayout: "auto" | "inline" | "separate";
-    entryLinkAlign: "auto" | "left" | "right";
+    entryLinkLayout: "inline" | "separate";
+    entryLinkAlign: "left" | "center" | "right";
     moduleSpacing: number;
     entrySpacing: number;
     nameSize: number;
+    sectionSize: number;
+    entryTitleSize: number;
     dividerWidth: number;
     bulletSize: number;
     bulletStyle: "auto" | "disc" | "circle" | "square" | "diamond";
@@ -323,11 +327,22 @@ export function normalizeResume(value: unknown): Resume {
       entryTitleAlign: choice(s.entryTitleAlign, ["left", "center", "right"], "left"),
       entrySubtitleAlign: choice(s.entrySubtitleAlign, ["left", "center", "right"], "left"),
       entryMetaAlign: choice(s.entryMetaAlign, ["left", "right"], "right"),
-      entryLinkLayout: choice(s.entryLinkLayout, ["auto", "inline", "separate"], "auto"),
-      entryLinkAlign: choice(s.entryLinkAlign, ["auto", "left", "right"], "auto"),
+      // Missing values and the removed legacy "auto" choice use explicit defaults.
+      entryLinkLayout: choice(
+        s.entryLinkLayout,
+        ["inline", "separate"],
+        PRESENTATION_DEFAULTS.entryLinkLayout,
+      ),
+      entryLinkAlign: choice(
+        s.entryLinkAlign,
+        ["left", "center", "right"],
+        PRESENTATION_DEFAULTS.entryLinkAlign,
+      ),
       moduleSpacing: clamp(s.moduleSpacing, 5, 30, 12),
       entrySpacing: clamp(s.entrySpacing, 0, 22, 7),
       nameSize: clamp(s.nameSize, 20, 40, PRESENTATION_DEFAULTS.nameSize),
+      sectionSize: clamp(s.sectionSize, 9, 24, PRESENTATION_DEFAULTS.sectionSize),
+      entryTitleSize: clamp(s.entryTitleSize, 9, 24, PRESENTATION_DEFAULTS.entryTitleSize),
       dividerWidth: clamp(s.dividerWidth, 0, 4, PRESENTATION_DEFAULTS.dividerWidth),
       bulletSize: clamp(s.bulletSize, 2, 8, PRESENTATION_DEFAULTS.bulletSize),
       bulletStyle: choice(s.bulletStyle, ["auto", "disc", "circle", "square", "diamond"], "auto"),

@@ -49,7 +49,7 @@ test("entry alignment and independent URL layout validate and round trip", () =>
     entrySubtitleAlign: "center",
     entryMetaAlign: "left",
     entryLinkLayout: "separate",
-    entryLinkAlign: "right",
+    entryLinkAlign: "center",
   });
   assert.deepEqual(normalizeResume(resume).style, resume.style);
   Object.assign(resume.style, {
@@ -68,6 +68,33 @@ test("entry alignment and independent URL layout validate and round trip", () =>
     "entryLinkAlign",
   ] as const)
     assert.equal(style[key], PRESENTATION_DEFAULTS[key]);
+});
+
+test("removed automatic link settings migrate to inline and right without losing explicit choices", () => {
+  const resume = blankResume();
+  assert.equal(resume.style.entryLinkLayout, "inline");
+  assert.equal(resume.style.entryLinkAlign, "right");
+  for (const legacy of [
+    { entryLinkLayout: undefined, entryLinkAlign: undefined },
+    { entryLinkLayout: "auto", entryLinkAlign: "auto" },
+    { entryLinkLayout: "bad", entryLinkAlign: "bad" },
+  ]) {
+    const restored = normalizeResume({
+      ...resume,
+      style: { ...resume.style, ...legacy },
+    });
+    assert.equal(restored.style.entryLinkLayout, "inline");
+    assert.equal(restored.style.entryLinkAlign, "right");
+  }
+  for (const entryLinkLayout of ["inline", "separate"] as const) {
+    for (const entryLinkAlign of ["left", "center", "right"] as const) {
+      const explicit = {
+        ...resume,
+        style: { ...resume.style, entryLinkLayout, entryLinkAlign },
+      };
+      assert.deepEqual(normalizeResume(JSON.parse(JSON.stringify(explicit))).style, explicit.style);
+    }
+  }
 });
 
 test("extended profile, experience and module fields survive editable document round trips", () => {

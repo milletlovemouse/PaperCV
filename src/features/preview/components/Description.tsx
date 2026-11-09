@@ -8,12 +8,16 @@ export default function Description({
   entryId,
   kind = "custom",
   standard = false,
+  bodyAlign = "auto",
+  skillStyle = "text",
 }: {
   html: string;
   sectionId: string;
   entryId: string;
   kind?: Resume["sections"][number]["kind"];
   standard?: boolean;
+  bodyAlign?: Resume["style"]["bodyAlign"];
+  skillStyle?: Resume["style"]["skillStyle"];
 }) {
   const parsed = new DOMParser().parseFromString(sanitizeRichText(html), "text/html");
   const parts: Array<{
@@ -114,8 +118,12 @@ export default function Description({
           data-list-depth={part.depth}
           data-list-kind={part.order ? "ordered" : "unordered"}
           data-marker={part.order ? `${part.order}.` : standard ? "•" : ["•", "◦", "▪"][part.depth % 3]}
-          dangerouslySetInnerHTML={{ __html: part.html }}
-        />
+          data-list-align={
+            part.bullet && (kind !== "skills" || skillStyle === "text") ? part.align || bodyAlign : undefined
+          }
+        >
+          <span className="description-text" dangerouslySetInnerHTML={{ __html: part.html }} />
+        </div>
       ))}
     </>
   );

@@ -117,80 +117,75 @@ export default function ContentPanel({
                 key={section.id}
                 id={`edit-${section.id}`}
               >
-                <Accordion.Header className="module-accordion-heading">
-                  <Accordion.Trigger className="module-header">
-                    <span className="module-icon">
-                      <Icon size={17} />
-                    </span>
-                    <span>{section.title}</span>
+                <Accordion.Header className="module-accordion-heading module-editable-heading">
+                  <span className="module-icon">
+                    <Icon size={17} />
+                  </span>
+                  <div className="module-header-actions">
+                    <TextField.Root
+                      aria-label="模块名称"
+                      value={section.title}
+                      onChange={(e) => sectionUpdate(section.id, (s) => ({ ...s, title: e.target.value }))}
+                    />
                     <span className="module-count">
                       {section.entries.length} 段{!section.visible && " · 已隐藏"}
                     </span>
+                    <IconButton
+                      title="经历按时间倒序"
+                      disabled={section.entries.length < 2}
+                      onClick={() =>
+                        sectionUpdate(
+                          section.id,
+                          (s) => ({ ...s, entries: sortEntriesByDate(s.entries) }),
+                          true,
+                        )
+                      }
+                    >
+                      <ListFilter size={14} />
+                    </IconButton>
+                    <IconButton
+                      title="上移模块"
+                      disabled={sectionIndex === 0}
+                      onClick={() => moveSection(section.id, -1)}
+                    >
+                      <ArrowUp size={14} />
+                    </IconButton>
+                    <IconButton
+                      title="下移模块"
+                      disabled={sectionIndex === resume.sections.length - 1}
+                      onClick={() => moveSection(section.id, 1)}
+                    >
+                      <ArrowDown size={14} />
+                    </IconButton>
+                    <IconButton
+                      title={section.visible ? "隐藏模块" : "显示模块"}
+                      onClick={() => sectionUpdate(section.id, (s) => ({ ...s, visible: !s.visible }), true)}
+                    >
+                      {section.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                    </IconButton>
+                    <IconButton
+                      title="删除模块"
+                      onClick={() =>
+                        setConfirm({
+                          title: `删除「${section.title}」？`,
+                          message: "这个模块及其中的经历将被移除，你可以通过撤销恢复。",
+                          action: () =>
+                            update(
+                              (r) => ({ ...r, sections: r.sections.filter((s) => s.id !== section.id) }),
+                              true,
+                            ),
+                        })
+                      }
+                    >
+                      <Trash2 size={14} />
+                    </IconButton>
+                  </div>
+                  <Accordion.Trigger className="module-header" aria-label={`展开或收起${section.title}`}>
                     {active === section.id ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                   </Accordion.Trigger>
                 </Accordion.Header>
                 {active === section.id && (
                   <Accordion.Content className="module-body">
-                    <div className="section-controls">
-                      <TextField.Root
-                        aria-label="模块名称"
-                        value={section.title}
-                        onChange={(e) => sectionUpdate(section.id, (s) => ({ ...s, title: e.target.value }))}
-                      />
-                      <div>
-                        <IconButton
-                          title="经历按时间倒序"
-                          disabled={section.entries.length < 2}
-                          onClick={() =>
-                            sectionUpdate(
-                              section.id,
-                              (s) => ({ ...s, entries: sortEntriesByDate(s.entries) }),
-                              true,
-                            )
-                          }
-                        >
-                          <ListFilter size={14} />
-                        </IconButton>
-                        <IconButton
-                          title="上移模块"
-                          disabled={sectionIndex === 0}
-                          onClick={() => moveSection(section.id, -1)}
-                        >
-                          <ArrowUp size={14} />
-                        </IconButton>
-                        <IconButton
-                          title="下移模块"
-                          disabled={sectionIndex === resume.sections.length - 1}
-                          onClick={() => moveSection(section.id, 1)}
-                        >
-                          <ArrowDown size={14} />
-                        </IconButton>
-                        <IconButton
-                          title={section.visible ? "隐藏模块" : "显示模块"}
-                          onClick={() =>
-                            sectionUpdate(section.id, (s) => ({ ...s, visible: !s.visible }), true)
-                          }
-                        >
-                          {section.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-                        </IconButton>
-                        <IconButton
-                          title="删除模块"
-                          onClick={() =>
-                            setConfirm({
-                              title: `删除「${section.title}」？`,
-                              message: "这个模块及其中的经历将被移除，你可以通过撤销恢复。",
-                              action: () =>
-                                update(
-                                  (r) => ({ ...r, sections: r.sections.filter((s) => s.id !== section.id) }),
-                                  true,
-                                ),
-                            })
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </IconButton>
-                      </div>
-                    </div>
                     {section.entries.map((entry, entryIndex) => (
                       <div
                         className={`entry-form ${entry.visible === false ? "entry-hidden" : ""}`}

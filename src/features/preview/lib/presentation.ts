@@ -21,6 +21,8 @@ export function resumeStyles(resume: Resume): CSSProperties {
     "--header-spacing": `${resume.style.headerSpacing ?? 27}px`,
     "--heading-gap": `${resume.style.headingGap ?? 10}px`,
     "--name-size": `${resume.style.nameSize}px`,
+    "--section-size": `${resume.style.sectionSize}px`,
+    "--entry-title-size": `${resume.style.entryTitleSize}px`,
     "--profile-color": resume.style.profileColor || "#000000",
     "--title-color": resume.style.titleColor || "#000000",
     "--decoration-color": resume.style.decorationColor || resume.style.accent,

@@ -56,6 +56,19 @@ try {
         const style = page.getByRole("radio", { name: "排版", exact: true });
         await page.getByRole("radiogroup", { name: "纸张尺寸" }).waitFor();
         assert.equal(await style.getAttribute("aria-checked"), "true");
+        for (const [title, control] of [
+          ["字体与字号", page.getByRole("slider", { name: "字号", exact: true })],
+          ["颜色与纸张", page.getByRole("radiogroup", { name: "纸张尺寸" })],
+        ] as const) {
+          const trigger = page.getByRole("button", { name: title, exact: true });
+          assert.equal(await trigger.getAttribute("aria-expanded"), "true");
+          await trigger.click();
+          assert.equal(await trigger.getAttribute("aria-expanded"), "false");
+          assert.equal(await control.isVisible(), false);
+          await trigger.press("Enter");
+          assert.equal(await trigger.getAttribute("aria-expanded"), "true");
+          assert.equal(await control.isVisible(), true);
+        }
         const slider = page.getByRole("slider", { name: "字号", exact: true });
         const sliderBox = await slider.boundingBox();
         assert.ok(sliderBox && sliderBox.width >= 7 && sliderBox.height >= 7, "slider thumb remains visible");

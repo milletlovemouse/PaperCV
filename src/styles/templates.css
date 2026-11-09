@@ -592,3 +592,46 @@
     -webkit-print-color-adjust: exact;
   }
 }
+
+/* Editable spacing and the four-level typography hierarchy must win over
+   template-specific defaults in this file. */
+.resume-preview .entry-spacer {
+  height: var(--entry-space) !important;
+}
+.resume-preview .section-heading {
+  padding-top: var(--module-space) !important;
+}
+.resume-preview.template-classic .resume-identity {
+  padding-bottom: var(--header-spacing) !important;
+}
+.resume-preview.template-classic .section-heading {
+  padding-bottom: var(--heading-gap) !important;
+}
+.resume-preview .resume-name {
+  font-size: var(--name-size) !important;
+}
+.resume-preview .section-heading {
+  font-size: var(--section-size) !important;
+}
+.resume-preview .entry-first-row > strong {
+  font-size: var(--entry-title-size) !important;
+}
+.resume-preview[data-info-style]:not([data-info-style="auto"]):not([data-info-style="labels"])
+  .contact-label {
+  display: none;
+}
+.resume-preview .resume-document,
+.resume-preview .resume-role,
+.resume-preview .resume-contact,
+.resume-preview .contact-row,
+.resume-preview .contact-item,
+.resume-preview .entry-first-row > span,
+.resume-preview .entry-second-row,
+.resume-preview .entry-inline-subtitle,
+.resume-preview .entry-link,
+.resume-preview .school-tags,
+.resume-preview .body-unit,
+.resume-preview .contact-label {
+  font-size: var(--resume-font-size) !important;
+  line-height: var(--resume-line-height) !important;
+}

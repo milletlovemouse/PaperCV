@@ -60,6 +60,28 @@ try {
     await page.reload({ waitUntil: "networkidle" });
     await ready();
     await page.getByRole("radio", { name: "排版", exact: true }).click();
+    assert.equal(
+      await page
+        .locator(".style-panel")
+        .getByRole("radio", { name: /^(默认|模板默认|自动)$/ })
+        .count(),
+      0,
+    );
+    for (const [label, selected, count] of [
+      ["相关链接位置", "副标题同行", 2],
+      ["相关链接对齐", "居右", 3],
+    ] as const) {
+      const group = page.getByRole("radiogroup", { name: label, exact: true });
+      assert.equal(await group.getByRole("radio").count(), count);
+      assert.equal(await group.getByRole("radio", { name: selected }).getAttribute("aria-checked"), "true");
+    }
+    for (const group of await page.locator(".layout-controls").getByRole("radiogroup").all()) {
+      assert.equal(
+        await group.getByRole("radio", { checked: true }).count(),
+        1,
+        `${template.id}: concrete layout choice must be selected`,
+      );
+    }
     for (const [alignment, label] of [
       ["left", "居左"],
       ["center", "居中"],
@@ -67,6 +89,8 @@ try {
     ] as const) {
       for (const group of ["姓名与求职意向", "联系方式对齐", "模块标题对齐", "正文对齐"])
         await pick(group, label);
+      await pick("经历主标题对齐", label);
+      await pick("经历副标题对齐", label);
       const actual = await page
         .locator(".preview-scroll .paper-page")
         .first()
@@ -75,7 +99,12 @@ try {
             (selector) => getComputedStyle(paper.querySelector(selector)!).textAlign,
           ),
         );
-      assert.deepEqual(actual, [alignment, alignment, alignment, alignment], template.id);
+      // Legacy template values retain logical `start`, equivalent to left in this LTR document.
+      assert.deepEqual(
+        actual.map((value) => (value === "start" ? "left" : value)),
+        [alignment, alignment, alignment, alignment],
+        template.id,
+      );
       // Check visible title placement too, including flex-based editorial headings.
       const placement = await page
         .locator(".preview-scroll .paper-page .section-heading")
@@ -88,6 +117,36 @@ try {
       if (alignment === "center")
         assert.ok(Math.abs(placement.left - placement.right) < 30, `${template.id}: heading not centered`);
       if (alignment === "right") assert.ok(placement.right < 15, `${template.id}: heading not right aligned`);
+      const list = await page
+        .locator(".preview-scroll .paper-page .bullet-unit")
+        .first()
+        .evaluate((node) => {
+          const marker = getComputedStyle(node, "::before");
+          return { markerPosition: marker.position, direction: getComputedStyle(node).flexDirection };
+        });
+      if (alignment !== "left") assert.equal(list.markerPosition, "static", template.id);
+      if (alignment === "right") assert.equal(list.direction, "row-reverse", template.id);
+      if (alignment === "center") {
+        const offsets = await page
+          .locator(".preview-scroll .paper-page .entry-heading")
+          .evaluateAll((nodes) =>
+            nodes.flatMap((node) => {
+              const box = node.getBoundingClientRect();
+              return [".entry-first-row > strong", ".entry-subtitle"].flatMap((selector) => {
+                const field = node.querySelector(selector);
+                if (!field?.textContent) return [];
+                const range = document.createRange();
+                range.selectNodeContents(field);
+                const text = range.getBoundingClientRect();
+                return [Math.abs((text.left + text.right - box.left - box.right) / 2)];
+              });
+            }),
+          );
+        assert.ok(
+          offsets.every((offset) => offset < 2),
+          `${template.id}: centered against full column ${offsets}`,
+        );
+      }
       await geometry();
     }
     await pick("正文对齐", "两端");
@@ -113,7 +172,7 @@ try {
       ["tint", "色块"],
       ["plain", "纯文字"],
     ] as const) {
-      await pick("标题样式", label);
+      await pick("模块标题样式", label);
       const decoration = await page
         .locator(".preview-scroll .paper-page .section-heading")
         .first()
@@ -142,8 +201,10 @@ try {
   await pick("联系方式对齐", "居中");
   await pick("模块标题对齐", "居中");
   await pick("正文对齐", "两端");
-  await pick("标题样式", "色块");
+  await pick("模块标题样式", "色块");
+  await pick("相关链接对齐", "居中");
   const expected = await saved();
+  assert.equal(expected.style.entryLinkAlign, "center");
   await page.reload({ waitUntil: "networkidle" });
   await ready();
   assert.deepEqual((await saved()).style, expected.style);

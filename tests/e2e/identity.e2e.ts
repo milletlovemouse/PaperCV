@@ -231,8 +231,8 @@ try {
   assert.equal(standard.lineHeight, "20px");
   assert.equal(standard.headingSize, "14px");
   assert.equal(standard.rowsSeparate, true);
-  assert.equal(standard.inlineLink, false, "a city and URL must not stack in the right column in auto mode");
-  assert.equal(standard.separateLinks, 1);
+  assert.equal(standard.inlineLink, true, "standard layout places links alongside the subtitle");
+  assert.equal(standard.separateLinks, 0);
   assert.equal(standard.bulletPadding, "20px");
   assert.equal(standard.bulletSpacing, "6px");
   assert.equal(standard.date, "2024.01 - 至今");
@@ -262,7 +262,7 @@ try {
   assert.equal(
     await page.locator(".paper-page .entry-second-row a").count(),
     1,
-    "auto retains inline link when the secondary metadata slot is empty",
+    "inline links remain alongside the subtitle when the secondary metadata slot is empty",
   );
   await update({ entry: { location: "广州" } });
 
@@ -270,8 +270,8 @@ try {
   for (const template of templates)
     for (const entryPriority of ["time", "location"] as const) {
       for (const entryLayout of ["one", "two"] as const)
-        for (const entryLinkLayout of ["auto", "inline", "separate"] as const) {
-          for (const align of ["left", "right"] as const) {
+        for (const entryLinkLayout of ["inline", "separate"] as const) {
+          for (const align of ["left", "center", "right"] as const) {
             const url =
               entryLinkLayout === "inline"
                 ? `https://example.com/${"long-path-".repeat(16)}`
@@ -290,8 +290,9 @@ try {
                 entryLinkLayout,
                 entryLinkAlign: align,
                 entryTitleAlign: align,
-                entrySubtitleAlign: align === "left" ? "right" : "left",
-                entryMetaAlign: align,
+                entrySubtitleAlign:
+                  entryPriority === "location" ? align : align === "left" ? "right" : "left",
+                entryMetaAlign: align === "center" ? (entryPriority === "time" ? "left" : "right") : align,
               },
             });
             const entry = page.locator(".paper-page .entry-heading");
@@ -310,6 +311,14 @@ try {
               align,
               `${template.id}/${entryPriority}/${entryLayout}/${entryLinkLayout}: link alignment must be independent of subtitle alignment`,
             );
+            if (align === "center" && entryLayout === "two" && entryLinkLayout === "inline") {
+              const offset = await entry.locator(".entry-inline-link").evaluate((link) => {
+                const box = (link.closest(".entry-subtitle-link-group") || link).getBoundingClientRect();
+                const row = link.closest(".entry-second-row")!.getBoundingClientRect();
+                return Math.abs(box.left + box.width / 2 - row.left - row.width / 2);
+              });
+              assert.ok(offset < 2, `${template.id}: link must be centered against its complete row`);
+            }
             assert.equal(
               await entry
                 .locator(".entry-first-row > strong")
@@ -325,12 +334,14 @@ try {
               const bounds = node.getBoundingClientRect();
               const children = [
                 ...node.querySelectorAll(
-                  ".entry-first-row > *, .entry-second-row > *, .entry-subtitle > *, .entry-secondary-meta > *",
+                  ".entry-first-row > *, .entry-second-row > *, .entry-secondary-group > *, .entry-subtitle-link-group > *",
                 ),
-              ];
+              ].filter((element) => element.getClientRects().length);
               const overlap = [
                 ".entry-first-row",
                 ".entry-second-row",
+                ".entry-secondary-group",
+                ".entry-subtitle-link-group",
                 ".entry-subtitle",
                 ".entry-secondary-meta",
               ].some((selector) => {
@@ -383,6 +394,77 @@ try {
   console.log(
     `PASS ${combinations} entry layouts: both priorities, metadata/link placement, long titles/URLs, all templates and screen/print bounds`,
   );
+  let inlineCombinations = 0;
+  for (const template of templates) {
+    for (const subtitleAlign of ["left", "center", "right"] as const) {
+      for (const linkAlign of ["left", "center", "right"] as const) {
+        for (const metaAlign of ["left", "right"] as const) {
+          await update({
+            entry: { title: "开源项目", subtitle: "前端开发", location: "沪", url: "x.cn" },
+            style: {
+              ...STANDARD_STYLE,
+              ...template.defaults,
+              template: template.id,
+              entrySubtitleAlign: subtitleAlign,
+              entryLinkAlign: linkAlign,
+              entryMetaAlign: metaAlign,
+            },
+          });
+          const inline = page.locator(".paper-page .entry-second-row");
+          const measure = await inline.evaluate((row) => {
+            const subtitleRange = document.createRange();
+            subtitleRange.selectNodeContents(row.querySelector(".entry-subtitle")!);
+            const linkRange = document.createRange();
+            linkRange.selectNodeContents(row.querySelector(".entry-inline-link")!);
+            const subtitle = subtitleRange.getClientRects()[0];
+            const link = linkRange.getClientRects()[0];
+            const pair = row.querySelector(".entry-subtitle-link-group")?.getBoundingClientRect();
+            const box = row.getBoundingClientRect();
+            const midpoint = box.left + box.width / 2;
+            return {
+              sameLine: Math.abs(subtitle.top - link.top) < 1,
+              paired: Boolean(pair),
+              pairCenter: pair ? Math.abs(pair.left + pair.width / 2 - midpoint) : null,
+              subtitleCenter: Math.abs(subtitle.left + subtitle.width / 2 - midpoint),
+              linkCenter: Math.abs(link.left + link.width / 2 - midpoint),
+            };
+          });
+          const name = `${template.id}/${subtitleAlign}/${linkAlign}/${metaAlign}`;
+          assert.equal(measure.sameLine, true, `${name}: short subtitle and link must share a line`);
+          assert.equal(
+            measure.paired,
+            subtitleAlign === linkAlign,
+            `${name}: matching alignments form a pair`,
+          );
+          if (subtitleAlign === "center" && linkAlign === "center")
+            assert.ok(measure.pairCenter! < 2, `${name}: center the pair as a whole`);
+          else {
+            if (subtitleAlign === "center") assert.ok(measure.subtitleCenter < 2, name);
+            if (linkAlign === "center") assert.ok(measure.linkCenter < 2, name);
+          }
+          inlineCombinations++;
+        }
+      }
+    }
+  }
+  console.log(
+    `PASS ${inlineCombinations} short inline layouts: real shared line, paired and independent alignment`,
+  );
+  await mkdir("output/qa", { recursive: true });
+  for (const entryLinkAlign of ["left", "center"] as const) {
+    await update({
+      entry: {
+        title: "视频聊天室",
+        subtitle: "开源项目 - 项目预览：rtcchatroom.cn",
+        location: "",
+        url: "github.com/example/rtc-chatroom",
+      },
+      style: { ...STANDARD_STYLE, entrySubtitleAlign: "center", entryLinkAlign },
+    });
+    await page.locator(".paper-page .entry-heading").screenshot({
+      path: `output/qa/inline-centered-subtitle-${entryLinkAlign}.png`,
+    });
+  }
   await update({ style: STANDARD_STYLE, entry: { title: "应用开发", location: "广州", url: "example.com" } });
 
   for (const bulletStyle of ["disc", "circle", "square", "diamond"] as const) {

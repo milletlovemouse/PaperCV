@@ -3,21 +3,30 @@ import { Button, ChoiceGroup, ChoiceItem } from "@/shared/ui";
 export function ChoiceChips({
   label,
   value,
+  displayValue = value,
   options,
   onChange,
 }: {
   label: string;
   value: string;
+  displayValue?: string;
   options: Array<[string, string]>;
   onChange: (value: string) => void;
 }) {
   return (
     <div className="layout-option">
       <span>{label}</span>
-      <ChoiceGroup label={label} className="style-chips" value={value} onChange={onChange}>
+      <ChoiceGroup label={label} className="style-chips" value={displayValue} onChange={onChange}>
         {options.map(([id, text]) => (
           <ChoiceItem key={id} value={id} asChild>
-            <Button className={value === id ? "chosen" : ""}>{text}</Button>
+            <Button
+              className={displayValue === id ? "chosen" : ""}
+              onClick={() => {
+                if (value !== displayValue && id === displayValue) onChange(id);
+              }}
+            >
+              {text}
+            </Button>
           </ChoiceItem>
         ))}
       </ChoiceGroup>

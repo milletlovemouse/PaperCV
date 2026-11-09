@@ -6,6 +6,23 @@ import {
   getSelectedTemplatePreset,
   templatePresets,
 } from "../../shared/resume/template-presets";
+import { ORIGINAL_PDF_STYLE, STANDARD_STYLE } from "../../shared/resume/templates";
+
+test("preset text hierarchy remains readable and standard actions reset all four levels", () => {
+  for (const { id, defaults: style } of templatePresets) {
+    assert.ok(style.nameSize >= style.sectionSize * 1.4, `${id}: name hierarchy`);
+    assert.ok(style.sectionSize > style.entryTitleSize, `${id}: module hierarchy`);
+    assert.ok(style.entryTitleSize >= style.fontSize, `${id}: title hierarchy`);
+    assert.ok(style.sectionSize - style.fontSize <= 2, `${id}: restrained module size`);
+  }
+  for (const style of [STANDARD_STYLE, ORIGINAL_PDF_STYLE]) {
+    const resume = blankResume();
+    Object.assign(resume.style, { nameSize: 40, sectionSize: 24, entryTitleSize: 24 }, style);
+    assert.equal(resume.style.nameSize, 20);
+    assert.equal(resume.style.entryTitleSize, style.fontSize);
+    assert.equal(resume.style.sectionSize, style.fontSize + 2);
+  }
+});
 
 test("curated presets have unique identities and distinct, valid, restorable appearances", () => {
   assert.equal(templatePresets.length, 36);
@@ -91,8 +108,8 @@ test("the library exercises every appearance control and the available visual va
     entryTitleAlign: ["left", "center", "right"],
     entrySubtitleAlign: ["left", "center", "right"],
     entryMetaAlign: ["left", "right"],
-    entryLinkLayout: ["auto", "inline", "separate"],
-    entryLinkAlign: ["auto", "left", "right"],
+    entryLinkLayout: ["inline", "separate"],
+    entryLinkAlign: ["left", "right"],
     photoShape: ["rect", "round", "circle"],
     bulletStyle: ["auto", "disc", "circle", "square", "diamond"],
   };

@@ -14,6 +14,42 @@ export interface TemplatePreset {
 }
 const { paper: _paper, showPageNumbers: _pageNumbers, ...appearanceDefaults } = DEFAULT_RESUME_STYLE;
 
+// Four text levels share one body size, including metadata and both columns.
+// Each layout owns its starting hierarchy rather than relying on CSS font overrides.
+const typographyByLayout = {
+  classic: { nameSize: 20, sectionOffset: 2, titleOffset: 0, headerSpacing: 27, headingGap: 10 },
+  modern: { nameSize: 26, sectionOffset: 1.5, titleOffset: 0.5, headerSpacing: 20, headingGap: 8 },
+  editorial: { nameSize: 28, sectionOffset: 2, titleOffset: 0.5, headerSpacing: 20, headingGap: 9 },
+  sidebar: { nameSize: 22, sectionOffset: 1, titleOffset: 0.5, headerSpacing: 16, headingGap: 7 },
+  timeline: { nameSize: 25, sectionOffset: 1.5, titleOffset: 0.5, headerSpacing: 18, headingGap: 8 },
+  compact: { nameSize: 24, sectionOffset: 1, titleOffset: 0.5, headerSpacing: 12, headingGap: 6 },
+} satisfies Record<Template, Record<string, number>>;
+
+const baseLayoutAppearance: Record<Template, Partial<TemplateAppearance>> = {
+  classic: {},
+  modern: {
+    headerLayout: "split",
+    headerDecoration: "rule",
+    infoStyle: "simple",
+    headingStyle: "tint",
+  },
+  editorial: {
+    headerLayout: "stacked",
+    nameAlign: "left",
+    contactAlign: "left",
+    headerDecoration: "plain",
+  },
+  sidebar: { moduleSpacing: 10, entrySpacing: 5, infoStyle: "simple" },
+  timeline: { headerLayout: "split", headerDecoration: "plain", entrySpacing: 7 },
+  compact: {
+    headerLayout: "inline",
+    headerDecoration: "rule",
+    moduleSpacing: 8,
+    entrySpacing: 3,
+    infoStyle: "simple",
+  },
+};
+
 function preset(
   id: string,
   template: Template,
@@ -24,6 +60,19 @@ function preset(
   overrides: Partial<TemplateAppearance>,
 ): TemplatePreset {
   const base = getTemplate(template);
+  const fontSize = overrides.fontSize ?? base.defaults.fontSize;
+  const typography = typographyByLayout[template];
+  const defaults = {
+    ...appearanceDefaults,
+    ...base.defaults,
+    nameSize: typography.nameSize,
+    sectionSize: fontSize + typography.sectionOffset,
+    entryTitleSize: fontSize + typography.titleOffset,
+    headerSpacing: typography.headerSpacing,
+    headingGap: typography.headingGap,
+    ...overrides,
+    template,
+  };
   return {
     id,
     template,
@@ -32,14 +81,22 @@ function preset(
     label,
     detail,
     category: base.category,
-    defaults: { ...appearanceDefaults, ...base.defaults, ...overrides, template },
+    defaults,
   };
 }
 
 /** Curated combinations share the six rendering layouts and own their full visual settings. */
 export const templatePresets: TemplatePreset[] = [
   ...templates.map((base) =>
-    preset(base.id, base.id, base.name, base.description, base.label, base.detail, {}),
+    preset(
+      base.id,
+      base.id,
+      base.name,
+      base.description,
+      base.label,
+      base.detail,
+      baseLayoutAppearance[base.id],
+    ),
   ),
   preset(
     "minimal-air",
@@ -368,13 +425,13 @@ export const templatePresets: TemplatePreset[] = [
       decorationColor: "#9b8a73",
       nameSize: 30,
       fontSize: 12,
-      lineHeight: 1.8,
-      margin: 19,
-      moduleSpacing: 16,
-      entrySpacing: 8,
+      lineHeight: 1.65,
+      margin: 17,
+      moduleSpacing: 12,
+      entrySpacing: 5,
       dividerWidth: 1.5,
-      headerSpacing: 24,
-      headingGap: 12,
+      headerSpacing: 18,
+      headingGap: 7,
       bulletStyle: "diamond",
       bulletSize: 3.25,
     },
@@ -545,10 +602,10 @@ export const templatePresets: TemplatePreset[] = [
       decorationColor: "#a18eaa",
       nameSize: 32,
       fontSize: 12.5,
-      lineHeight: 1.85,
-      margin: 20,
-      moduleSpacing: 18,
-      entrySpacing: 9,
+      lineHeight: 1.65,
+      margin: 17,
+      moduleSpacing: 12,
+      entrySpacing: 6,
       bodyAlign: "justify",
       entryLinkLayout: "separate",
       entryLinkAlign: "left",
@@ -620,11 +677,11 @@ export const templatePresets: TemplatePreset[] = [
       profileColor: "#554938",
       decorationColor: "#aa9477",
       nameSize: 30,
-      fontSize: 13,
-      lineHeight: 1.9,
-      margin: 22,
-      moduleSpacing: 18,
-      entrySpacing: 10,
+      fontSize: 12,
+      lineHeight: 1.7,
+      margin: 18,
+      moduleSpacing: 13,
+      entrySpacing: 6,
       dividerWidth: 0,
       headerSpacing: 28,
       headingGap: 14,
@@ -826,10 +883,10 @@ export const templatePresets: TemplatePreset[] = [
       decorationColor: "#b39470",
       nameSize: 28,
       fontSize: 12,
-      lineHeight: 1.8,
-      margin: 18,
-      moduleSpacing: 16,
-      entrySpacing: 9,
+      lineHeight: 1.65,
+      margin: 16,
+      moduleSpacing: 12,
+      entrySpacing: 6,
       dateFormat: "slash",
       bodyAlign: "justify",
       entryLinkLayout: "separate",
