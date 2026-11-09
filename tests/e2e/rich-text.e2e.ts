@@ -35,14 +35,14 @@ await page.route("**/__rich-text-test", (route) =>
     import ReactDOM from "/node_modules/.vite/deps/react-dom_client.js";
     import { Theme } from "${themeModule}";
     import "/src/styles/radix.css";
-    import "/src/styles/theme.css";
     import RichText from "/src/features/rich-text/components/RichText.tsx";
     import ResumePreview from "/src/features/preview/components/ResumePreview.tsx";
     import { blankResume } from "/shared/resume/model.ts";
     import "/src/styles/base.css";
-    import "/src/styles/templates.css";
     import "/src/styles/layout.css";
     import "/src/styles/presentation.css";
+    import "/src/styles/templates.css";
+    import "/src/styles/theme.css";
     function Fixture() {
       const [resume, setResume] = React.useState(() => {
         const value = blankResume();
@@ -121,7 +121,7 @@ try {
     );
     assert.deepEqual(
       actual.map((row) => row.marker),
-      ["•", "•", "•", "•"],
+      [undefined, undefined, undefined, undefined],
     );
     assert.equal(await editor.locator("li").count(), 4, "no extra parent marker");
   }

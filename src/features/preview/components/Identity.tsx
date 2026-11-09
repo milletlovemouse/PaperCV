@@ -11,9 +11,12 @@ import {
 } from "lucide-react";
 import { birthdayDisplay, formatDate } from "@resume/editor-config";
 import type { Resume } from "@resume/model";
+import { resolveStyleOptions } from "@resume/style-options";
 
 export default function Identity({ resume }: { resume: Resume }) {
   const p = resume.profile;
+  const choices = resolveStyleOptions(resume.style);
+  const inlineRole = choices.headerLayout === "inline";
   const contactRows = [
     [
       { label: "电话", value: p.phone, icon: Phone },
@@ -28,7 +31,7 @@ export default function Identity({ resume }: { resume: Resume }) {
     [
       {
         label: p.birthdayMode === "age" ? "年龄" : "生日",
-        value: formatDate(birthdayDisplay(p.birthday || "", p.birthdayMode), resume.style.dateFormat),
+        value: formatDate(birthdayDisplay(p.birthday || "", p.birthdayMode), choices.dateFormat),
         icon: CalendarDays,
       },
       { label: "性别", value: p.gender, icon: UserRound },
@@ -43,7 +46,7 @@ export default function Identity({ resume }: { resume: Resume }) {
       })),
     ],
     [
-      { label: "求职意向", value: p.role, icon: BriefcaseBusiness },
+      { label: "求职意向", value: inlineRole ? "" : p.role, icon: BriefcaseBusiness },
       { label: "当前状态", value: p.employmentStatus, icon: BriefcaseBusiness },
       { label: "意向城市", value: p.expectedCity, icon: MapPin },
       { label: "期望薪资", value: p.expectedSalary, icon: BriefcaseBusiness },
@@ -56,6 +59,7 @@ export default function Identity({ resume }: { resume: Resume }) {
       {p.avatar && <img className="resume-avatar" src={p.avatar} alt="" />}
       <div className="identity-main">
         <div className="resume-name">{p.name || "你的姓名"}</div>
+        {inlineRole && p.role && <div className="resume-role">{p.role}</div>}
       </div>
       {contactRows.length > 0 && (
         <div className="resume-contact">

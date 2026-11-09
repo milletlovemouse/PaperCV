@@ -29,9 +29,9 @@ await page.route("**/__identity-test", (route) =>
     import "/node_modules/@fontsource-variable/noto-sans-sc/index.css";
     import "/node_modules/@fontsource-variable/noto-serif-sc/index.css";
     import "/src/styles/base.css";
-    import "/src/styles/templates.css";
     import "/src/styles/layout.css";
     import "/src/styles/presentation.css";
+    import "/src/styles/templates.css";
     function Fixture() {
       const [resume, setResume] = React.useState(() => {
         const value = blankResume();
@@ -92,7 +92,15 @@ try {
     assert.equal(geometry.display, "block", template.id);
     assert.equal(geometry.nameSize, "20px", template.id);
     assert.equal(geometry.align, "left", template.id);
-    assert.equal(geometry.color, "rgb(0, 0, 0)", template.id);
+    assert.equal(geometry.color, "rgb(52, 88, 75)", template.id);
+    assert.equal(
+      await page
+        .locator(".paper-page .section-heading")
+        .first()
+        .evaluate((node) => getComputedStyle(node).color),
+      "rgb(52, 88, 75)",
+      `${template.id}: unset title color follows theme`,
+    );
     assert.equal(new Set(geometry.lefts).size, 1, template.id);
     assert.ok(
       geometry.tops.every((top, i) => i === 0 || top > geometry.tops[i - 1]),
@@ -111,9 +119,7 @@ try {
       .evaluateAll((pages) =>
         pages.flatMap((paper) =>
           [
-            ...paper.querySelectorAll(
-              ".resume-contact,.section-heading,.body-unit,.entry-first-row > span,.entry-second-row",
-            ),
+            ...paper.querySelectorAll(".resume-contact,.body-unit,.entry-first-row > span,.entry-second-row"),
           ].map((node) => getComputedStyle(node).color),
         ),
       );
@@ -182,6 +188,17 @@ try {
       );
     }
   }
+  assert.equal(await identity.locator(".resume-role").count(), 1, "inline intent appears exactly once");
+  assert.equal(await identity.locator(".resume-contact .resume-role").count(), 0);
+  assert.equal(
+    await identity.evaluate((node) => {
+      const name = node.querySelector(".resume-name")!.getBoundingClientRect();
+      const role = node.querySelector(".identity-main > .resume-role")!.getBoundingClientRect();
+      return name.top < role.bottom && role.top < name.bottom && role.left >= name.right;
+    }),
+    true,
+    "inline header places job intent next to the name",
+  );
   await update({
     style: {
       headerLayout: "auto",
@@ -236,7 +253,7 @@ try {
   assert.equal(standard.bulletPadding, "20px");
   assert.equal(standard.bulletSpacing, "6px");
   assert.equal(standard.date, "2024.01 - 至今");
-  assert.match(standard.birthday!, /1999-12/);
+  assert.match(standard.birthday!, /1999\.12/);
   assert.equal(
     normalizeResume({
       version: 1,
@@ -694,7 +711,7 @@ try {
           .first()
           .evaluate((paper) => {
             const marker = getComputedStyle(paper.querySelector(".bullet-unit")!, "::before");
-            const title = getComputedStyle(paper.querySelector(".section-title")!);
+            const title = getComputedStyle(paper.querySelector(".section-heading")!);
             return {
               size: parseFloat(marker.width),
               border: parseFloat(title.borderBottomWidth),
@@ -726,8 +743,76 @@ try {
   console.log(
     "PASS 12 marker/divider combinations retain identical screen and print geometry with real web fonts",
   );
+  for (const template of templates) {
+    for (const bulletStyle of ["auto", "disc", "circle", "square", "diamond"] as const) {
+      for (const bodyAlign of ["left", "center", "right"] as const) {
+        await update({
+          entry: {
+            description: "<ul><li>一级标记<ul><li>二级标记</li></ul></li></ul><ol><li>有序项目</li></ol>",
+          },
+          style: {
+            ...STANDARD_STYLE,
+            template: template.id,
+            bulletStyle,
+            bulletSize: 5,
+            bodyAlign,
+            headerSpacing: 35,
+            headingGap: 19,
+          },
+        });
+        const actual = await page
+          .locator(".paper-page")
+          .first()
+          .evaluate((paper) => {
+            const unordered = [...paper.querySelectorAll('.bullet-unit[data-list-kind="unordered"]')];
+            return {
+              markers: unordered.map((node) => {
+                const css = getComputedStyle(node, "::before");
+                return [css.content, css.width, css.height, css.backgroundColor, css.border, css.transform];
+              }),
+              ordered: getComputedStyle(
+                paper.querySelector('.bullet-unit[data-list-kind="ordered"]')!,
+                "::before",
+              ).content,
+              headerGap: getComputedStyle(paper.querySelector(".resume-identity")!).paddingBottom,
+              headingGap: getComputedStyle(paper.querySelector(".section-heading")!).paddingBottom,
+            };
+          });
+        const label = `${template.id}/${bulletStyle}/${bodyAlign}`;
+        assert.equal(actual.markers.length, 2, label);
+        assert.deepEqual(
+          actual.markers[0],
+          actual.markers[1],
+          `${label}: nested marks retain selected shape`,
+        );
+        assert.equal(actual.markers[0][0], '""', `${label}: use geometry instead of a font glyph`);
+        assert.equal(actual.markers[0][1], "5px", `${label}: obey marker size`);
+        assert.equal(actual.markers[0][5] === "none", bulletStyle !== "diamond", label);
+        assert.equal(actual.ordered, '"1."', `${label}: unordered style must not affect numbering`);
+        assert.equal(actual.headerGap, "35px", `${label}: header gap applies to every template`);
+        assert.equal(actual.headingGap, "19px", `${label}: module title gap applies to every template`);
+        await page.emulateMedia({ media: "print" });
+        const printedMarker = await page
+          .locator('.paper-page .bullet-unit[data-list-kind="unordered"]')
+          .first()
+          .evaluate((node) => getComputedStyle(node, "::before").width);
+        assert.equal(printedMarker, "5px", `${label}: print retains marker geometry`);
+        await page.emulateMedia({ media: "screen" });
+      }
+      for (const skillStyle of ["icons", "tags"] as const) {
+        await update({ style: { skillStyle } });
+        assert.equal(await page.locator(".paper-page .kind-skills.bullet-unit").count(), 0);
+        const content = await page
+          .locator(".paper-page .kind-skills")
+          .first()
+          .evaluate((node) => getComputedStyle(node, "::before").content);
+        assert.equal(content, skillStyle === "icons" ? '"◆"' : "none");
+      }
+    }
+  }
+  console.log("PASS 90 marker/layout combinations, nesting, ordered lists, skills, spacing and print parity");
 
-  await update({ style: { template: "classic", nameSize: 20, profileColor: "" } });
+  await update({ style: { ...STANDARD_STYLE, template: "classic", nameSize: 20, profileColor: "" } });
   await mkdir("output/qa", { recursive: true });
   await page.screenshot({
     path: "output/qa/identity-layout.png",

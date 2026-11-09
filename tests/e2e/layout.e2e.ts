@@ -82,6 +82,44 @@ try {
         `${template.id}: concrete layout choice must be selected`,
       );
     }
+    const renderedAppearance = () =>
+      page
+        .locator(".preview-scroll .paper-page")
+        .first()
+        .evaluate((paper) =>
+          [".resume-identity", ".resume-name", ".resume-contact", ".section-heading", ".bullet-unit"].map(
+            (selector) => {
+              const node = paper.querySelector(selector)!;
+              const style = getComputedStyle(node);
+              const marker = getComputedStyle(node, "::before");
+              return {
+                selector,
+                width: node.getBoundingClientRect().width,
+                height: node.getBoundingClientRect().height,
+                display: style.display,
+                align: style.textAlign,
+                color: style.color,
+                padding: style.padding,
+                background: style.backgroundImage,
+                border: style.border,
+                marker: [marker.content, marker.width, marker.height, marker.border, marker.transform],
+              };
+            },
+          ),
+        );
+    const beforeSelectingDisplayedChoices = await renderedAppearance();
+    for (const group of await page.locator(".style-panel").getByRole("radiogroup").all()) {
+      const selected = group.getByRole("radio", { checked: true });
+      if (await selected.count()) {
+        await selected.click();
+        await ready();
+      }
+    }
+    assert.deepEqual(
+      await renderedAppearance(),
+      beforeSelectingDisplayedChoices,
+      `${template.id}: selecting displayed defaults must preserve rendered appearance`,
+    );
     for (const [alignment, label] of [
       ["left", "居左"],
       ["center", "居中"],

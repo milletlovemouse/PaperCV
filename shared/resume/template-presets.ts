@@ -1,4 +1,5 @@
 import { DEFAULT_RESUME_STYLE, type Resume, type Template } from "./model";
+import { resolveStyleOptions } from "./style-options";
 import { getTemplate, templates, type TemplateCategory } from "./templates";
 
 type TemplateAppearance = Omit<Resume["style"], "paper" | "showPageNumbers">;
@@ -1014,7 +1015,16 @@ export function applyTemplatePreset(style: Resume["style"], id: string): Resume[
 
 /** Values, rather than an extra storage ID, identify a preset after JSON restore or undo. */
 export function getSelectedTemplatePreset(style: Resume["style"]): TemplatePreset | undefined {
-  return templatePresets.find((item) =>
+  const exact = templatePresets.find((item) =>
     Object.entries(item.defaults).every(([key, value]) => style[key as keyof TemplateAppearance] === value),
   );
+  if (exact) return exact;
+  const actual = { ...style, ...resolveStyleOptions(style) };
+  return templatePresets.find((item) => {
+    const expected = { ...style, ...item.defaults };
+    const resolved = { ...expected, ...resolveStyleOptions(expected) };
+    return Object.keys(item.defaults).every(
+      (key) => actual[key as keyof TemplateAppearance] === resolved[key as keyof TemplateAppearance],
+    );
+  });
 }

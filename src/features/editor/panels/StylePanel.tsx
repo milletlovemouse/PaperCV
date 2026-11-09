@@ -20,7 +20,7 @@ interface Props {
 export default function StylePanel({ resume, update, fitOnePage }: Props) {
   const choices = styleOptionValues(resume.style);
   const style = (key: keyof Resume["style"], value: string | number | boolean) =>
-    update((r) => ({ ...r, style: { ...r.style, [key]: value } }));
+    update((r) => ({ ...r, style: { ...r.style, ...styleOptionValues(r.style), [key]: value } }));
   return (
     <div className="style-panel">
       <p className="panel-description">细微的调整，让每一页都清晰、舒展。</p>

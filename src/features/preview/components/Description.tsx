@@ -105,7 +105,7 @@ export default function Description({
       {parts.map((part, index) => (
         <div
           key={index}
-          className={`resume-unit body-unit kind-${kind} ${part.bullet ? "bullet-unit" : ""}`}
+          className={`resume-unit body-unit kind-${kind} ${part.bullet && (kind !== "skills" || skillStyle === "text") ? "bullet-unit" : ""}`}
           style={
             {
               textAlign: part.align,
@@ -117,7 +117,7 @@ export default function Description({
           data-splittable="true"
           data-list-depth={part.depth}
           data-list-kind={part.order ? "ordered" : "unordered"}
-          data-marker={part.order ? `${part.order}.` : standard ? "•" : ["•", "◦", "▪"][part.depth % 3]}
+          data-marker={part.order ? `${part.order}.` : undefined}
           data-list-align={
             part.bullet && (kind !== "skills" || skillStyle === "text") ? part.align || bodyAlign : undefined
           }

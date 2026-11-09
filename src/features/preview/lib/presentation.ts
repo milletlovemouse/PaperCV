@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Resume } from "@resume/model";
+import { resolveStyleOptions } from "@resume/style-options";
 import { paperSize, verticalPageMargin } from "./paper";
 
 export function resumeStyles(resume: Resume): CSSProperties {
@@ -23,8 +24,8 @@ export function resumeStyles(resume: Resume): CSSProperties {
     "--name-size": `${resume.style.nameSize}px`,
     "--section-size": `${resume.style.sectionSize}px`,
     "--entry-title-size": `${resume.style.entryTitleSize}px`,
-    "--profile-color": resume.style.profileColor || "#000000",
-    "--title-color": resume.style.titleColor || "#000000",
+    "--profile-color": resume.style.profileColor || resume.style.accent,
+    "--title-color": resume.style.titleColor || resume.style.accent,
     "--decoration-color": resume.style.decorationColor || resume.style.accent,
     "--resume-font":
       resume.style.font === "yahei"
@@ -35,19 +36,20 @@ export function resumeStyles(resume: Resume): CSSProperties {
   } as CSSProperties;
 }
 export function layoutAttributes(resume: Resume) {
+  const style = { ...resume.style, ...resolveStyleOptions(resume.style) };
   return {
     "data-entry-title-align": resume.style.entryTitleAlign || "left",
     "data-entry-subtitle-align": resume.style.entrySubtitleAlign || "left",
     "data-entry-meta-align": resume.style.entryMetaAlign || "right",
-    "data-bullet-style": resume.style.bulletStyle || "auto",
-    "data-header-layout": resume.style.headerLayout,
-    "data-name-align": resume.style.nameAlign,
-    "data-contact-align": resume.style.contactAlign,
-    "data-section-align": resume.style.sectionAlign,
-    "data-body-align": resume.style.bodyAlign,
-    "data-heading-style": resume.style.headingStyle,
-    "data-info-style": resume.style.infoStyle,
-    "data-header-decoration": resume.style.headerDecoration,
+    "data-bullet-style": style.bulletStyle,
+    "data-header-layout": style.headerLayout,
+    "data-name-align": style.nameAlign,
+    "data-contact-align": style.contactAlign,
+    "data-section-align": style.sectionAlign,
+    "data-body-align": style.bodyAlign,
+    "data-heading-style": style.headingStyle,
+    "data-info-style": style.infoStyle,
+    "data-header-decoration": style.headerDecoration,
     "data-paper-style": resume.style.paperStyle,
     "data-skill-style": resume.style.skillStyle,
     "data-photo-shape": resume.style.photoShape,

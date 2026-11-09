@@ -1,5 +1,6 @@
 import { formatDate, safeURL } from "@resume/editor-config";
 import type { Resume } from "@resume/model";
+import { resolveStyleOptions } from "@resume/style-options";
 import { partitionSections } from "@resume/templates";
 
 import Description from "./Description";
@@ -106,12 +107,7 @@ function EntryContent({
   const subtitle = [entry.subtitle, entry.degree, entry.college, entry.educationType, entry.department]
     .filter(Boolean)
     .join(separator);
-  const dateFormat =
-    style.dateFormat === "template"
-      ? style.template === "classic"
-        ? "numeric"
-        : "original"
-      : style.dateFormat;
+  const dateFormat = resolveStyleOptions(style).dateFormat;
   const dateParts = [entry.start, entry.end].filter(Boolean).map((value) => formatDate(value, dateFormat));
   const date = dateParts.length ? (
     <span className="entry-date-range">
@@ -198,7 +194,7 @@ function EntryContent({
           entryId={entry.id}
           kind={kind}
           standard={style.template === "classic"}
-          bodyAlign={style.bodyAlign}
+          bodyAlign={resolveStyleOptions(style).bodyAlign}
           skillStyle={style.skillStyle}
         />
       )}

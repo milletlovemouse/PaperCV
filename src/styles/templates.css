@@ -34,9 +34,6 @@
 }
 
 /* 01. Classic: centered identity and restrained, full-width section rules. */
-.template-classic .resume-identity {
-  padding-bottom: 17px;
-}
 .template-classic .section-heading {
   border-bottom: 1px solid var(--accent);
   font-weight: 650;
@@ -53,23 +50,11 @@
   border: 0;
   text-align: left;
 }
-.template-modern .resume-identity::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 10px;
-  height: 3px;
-  background: var(--accent);
-}
 .template-modern .resume-name {
-  font-size: 29px;
   letter-spacing: 3px;
   line-height: 1.3;
-  color: var(--accent);
 }
 .template-modern .resume-role {
-  font-size: 12px;
   letter-spacing: 1px;
   margin-top: 8px;
 }
@@ -77,7 +62,6 @@
   display: block;
   text-align: right;
   margin: 0;
-  font-size: 10px;
   line-height: 1.7;
 }
 .template-modern .contact-item {
@@ -99,25 +83,19 @@
   border: 0;
   border-left: 3px solid var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, white);
-  color: var(--accent);
-  font-size: calc(var(--resume-font-size) + 0.5px);
   letter-spacing: 1px;
 }
 .template-modern .section-heading::after {
   content: none;
-}
-.template-modern .entry-spacer {
-  height: 10px;
 }
 .template-modern .summary-unit {
   padding-top: 9px;
   padding-bottom: 12px;
 }
 
-/* 03. Editorial: generous serif masthead and numbered chapter headings. */
+/* 03. Editorial: generous serif masthead and restrained section rules. */
 .template-editorial .resume-identity {
   text-align: left;
-  padding-bottom: 17px;
   min-height: 0;
 }
 .template-editorial .resume-identity:has(.resume-avatar) {
@@ -130,13 +108,10 @@
   justify-content: space-between;
 }
 .template-editorial .resume-name {
-  font-size: 32px;
   font-weight: 500;
   letter-spacing: 4px;
 }
 .template-editorial .resume-role {
-  font-family: "Noto Sans SC Variable", sans-serif;
-  font-size: 11px;
   letter-spacing: 3px;
   margin: 0;
 }
@@ -153,34 +128,11 @@
   border: 0;
   margin: 0;
   padding: 14px 0 8px;
-  color: var(--accent);
   letter-spacing: 2px;
-  font-size: calc(var(--resume-font-size) + 1.5px);
   font-weight: 600;
-}
-.template-editorial .section-heading::before {
-  content: attr(data-number);
-  font-family: "Noto Sans SC Variable", sans-serif;
-  font-size: 9px;
-  letter-spacing: 1px;
-  opacity: 0.65;
-}
-.template-editorial .section-heading::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--accent);
-  opacity: 0.25;
 }
 .template-editorial .entry-first-row strong {
   font-weight: 650;
-}
-.template-editorial .entry-date {
-  font-family: "Noto Sans SC Variable", sans-serif;
-  font-size: calc(var(--resume-font-size) - 2px);
-}
-.template-editorial .entry-spacer {
-  height: 10px;
 }
 
 /* 04. Real two-column flow. Each column owns its measured fragments, and
@@ -207,10 +159,6 @@
 .template-sidebar .measure-sidebar {
   width: var(--sidebar-width);
 }
-.template-sidebar .sidebar-document {
-  font-size: calc(var(--resume-font-size) - 0.5px);
-  color: #526258;
-}
 .template-sidebar .resume-identity,
 .template-sidebar .resume-identity:has(.resume-avatar) {
   padding: 0 0 18px;
@@ -226,20 +174,16 @@
   border: 3px solid white;
 }
 .template-sidebar .resume-name {
-  font-size: 25px;
   letter-spacing: 3px;
-  color: var(--accent);
   line-height: 1.5;
 }
 .template-sidebar .resume-role {
-  font-size: 11px;
   margin-top: 5px;
   letter-spacing: 1px;
 }
 .template-sidebar .resume-contact {
   display: block;
   margin-top: 18px;
-  font-size: 9px;
 }
 .template-sidebar .contact-item {
   display: block;
@@ -248,7 +192,6 @@
 .template-sidebar .contact-label {
   display: block;
   color: #8a998d;
-  font-size: 8px;
   letter-spacing: 1px;
   margin-bottom: 1px;
 }
@@ -258,8 +201,6 @@
 .template-sidebar .section-heading {
   border: 0;
   padding: 11px 0 8px;
-  color: var(--accent);
-  font-size: calc(var(--resume-font-size) + 1px);
   letter-spacing: 1.5px;
 }
 .template-sidebar .section-heading::after {
@@ -267,8 +208,6 @@
 }
 .template-sidebar .main-document .section-heading {
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, white);
-  padding-top: 10px;
-  padding-bottom: 7px;
 }
 .template-sidebar .sidebar-document .entry-first-row,
 .template-sidebar .sidebar-document .entry-second-row {
@@ -279,13 +218,6 @@
 }
 .resume-preview.template-sidebar .sidebar-document .entry-first-row > strong {
   flex: 1 1 auto;
-  font-size: var(--resume-font-size);
-}
-.template-sidebar .sidebar-document .entry-date {
-  font-size: 9px;
-}
-.template-sidebar .sidebar-document .entry-second-row {
-  font-size: 9px;
 }
 .resume-preview.template-sidebar .sidebar-document .entry-second-row > .entry-subtitle {
   flex: 1 1 8em;
@@ -293,22 +225,12 @@
 .resume-preview.template-sidebar .sidebar-document .entry-second-row > .entry-secondary-meta {
   max-width: 100%;
 }
-.template-sidebar .sidebar-document .body-unit {
-  font-size: calc(var(--resume-font-size) - 1px);
-}
 .template-sidebar .main-document .entry-first-row {
   flex-wrap: wrap;
   gap: 1px 8px;
 }
-.template-sidebar .main-document .entry-date {
-  font-size: 9px;
-}
 .template-sidebar .main-document .entry-second-row {
-  font-size: calc(var(--resume-font-size) - 1px);
   gap: 8px;
-}
-.template-sidebar .entry-spacer {
-  height: 9px;
 }
 
 /* 05. Timeline: actual date column with connected content track. */
@@ -319,11 +241,8 @@
 }
 .template-timeline .resume-identity {
   text-align: left;
-  padding-bottom: 18px;
 }
 .template-timeline .resume-name {
-  font-size: 29px;
-  color: var(--accent);
   letter-spacing: 3px;
 }
 .template-timeline .resume-role {
@@ -337,7 +256,6 @@
   padding: 13px 0 9px;
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 28%, white);
-  font-size: calc(var(--resume-font-size) + 1px);
   letter-spacing: 1.5px;
 }
 .template-timeline .entry-heading,
@@ -384,27 +302,13 @@
   grid-column: 1;
   grid-row: 1 / span 2;
   white-space: normal;
-  font-size: calc(var(--resume-font-size) - 1.5px);
   line-height: 1.7;
   color: #7a897e;
-}
-.template-timeline .body-unit:not(.summary-unit) {
-  padding-left: var(--timeline-inset);
-}
-.template-timeline .bullet-unit {
-  padding-left: calc(var(--timeline-inset) + 12px) !important;
-}
-.template-timeline .bullet-unit::before {
-  left: var(--timeline-inset);
-}
-.template-timeline .entry-spacer {
-  height: 11px;
 }
 
 /* 06. Compact: horizontal identity, tighter unit rhythm, dense entry rows. */
 .template-compact .resume-identity,
 .template-compact .resume-identity:has(.resume-avatar) {
-  padding-bottom: 10px;
   min-height: 0;
   text-align: left;
 }
@@ -414,11 +318,9 @@
   gap: 18px;
 }
 .template-compact .resume-name {
-  font-size: 25px;
   letter-spacing: 3px;
 }
 .template-compact .resume-role {
-  font-size: 12px;
   letter-spacing: 1px;
   margin: 0;
   padding-left: 15px;
@@ -426,12 +328,10 @@
 }
 .template-compact .resume-contact {
   justify-content: flex-start;
-  font-size: 9px;
   margin-top: 7px;
 }
 .template-compact .section-heading {
   padding: 8px 0 5px;
-  font-size: calc(var(--resume-font-size) + 0.5px);
   border-bottom: 1px solid var(--accent);
   letter-spacing: 0.5px;
 }
@@ -448,9 +348,6 @@
 .template-compact .summary-unit {
   padding-top: 5px;
   padding-bottom: 3px;
-}
-.template-compact .entry-spacer {
-  height: 4px;
 }
 .template-compact .resume-avatar {
   width: 16mm;
@@ -601,10 +498,10 @@
 .resume-preview .section-heading {
   padding-top: var(--module-space) !important;
 }
-.resume-preview.template-classic .resume-identity {
+.resume-preview .resume-identity {
   padding-bottom: var(--header-spacing) !important;
 }
-.resume-preview.template-classic .section-heading {
+.resume-preview .section-heading {
   padding-bottom: var(--heading-gap) !important;
 }
 .resume-preview .resume-name {
@@ -616,8 +513,7 @@
 .resume-preview .entry-first-row strong {
   font-size: var(--entry-title-size) !important;
 }
-.resume-preview[data-info-style]:not([data-info-style="auto"]):not([data-info-style="labels"])
-  .contact-label {
+.resume-preview[data-info-style]:not([data-info-style="labels"]) .contact-label {
   display: none;
 }
 .resume-preview .resume-document,

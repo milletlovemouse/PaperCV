@@ -88,10 +88,10 @@ export const templates: ResumeTemplate[] = [
   {
     id: "editorial",
     name: "人文书写",
-    description: "衬线标题 · 编号章节",
+    description: "衬线标题 · 细线分区",
     category: "single",
     label: "质感",
-    detail: "衬线大标题、章节编号与克制的细线，留出更舒展的阅读节奏。",
+    detail: "衬线大标题与克制的细线分区，留出更舒展的阅读节奏。",
     defaults: { font: "serif", fontSize: 12, lineHeight: 1.75, margin: 19 },
   },
   {

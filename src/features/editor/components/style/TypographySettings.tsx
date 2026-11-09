@@ -101,28 +101,24 @@ export default function TypographySettings({ resume, style }: Props) {
           unit="px"
           onChange={(v) => style("entrySpacing", v)}
         />
-        {resume.style.template === "classic" && (
-          <>
-            <Range
-              label="个人信息下方留白"
-              value={resume.style.headerSpacing ?? 27}
-              min={0}
-              max={50}
-              step={1}
-              unit="px"
-              onChange={(v) => style("headerSpacing", v)}
-            />
-            <Range
-              label="模块标题下方留白"
-              value={resume.style.headingGap ?? 10}
-              min={0}
-              max={25}
-              step={1}
-              unit="px"
-              onChange={(v) => style("headingGap", v)}
-            />
-          </>
-        )}
+        <Range
+          label="个人信息下方留白"
+          value={resume.style.headerSpacing ?? 27}
+          min={0}
+          max={50}
+          step={1}
+          unit="px"
+          onChange={(v) => style("headerSpacing", v)}
+        />
+        <Range
+          label="模块标题下方留白"
+          value={resume.style.headingGap ?? 10}
+          min={0}
+          max={25}
+          step={1}
+          unit="px"
+          onChange={(v) => style("headingGap", v)}
+        />
       </Disclosure>
     </>
   );
