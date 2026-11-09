@@ -613,7 +613,7 @@
 .resume-preview .section-heading {
   font-size: var(--section-size) !important;
 }
-.resume-preview .entry-first-row > strong {
+.resume-preview .entry-first-row strong {
   font-size: var(--entry-title-size) !important;
 }
 .resume-preview[data-info-style]:not([data-info-style="auto"]):not([data-info-style="labels"])

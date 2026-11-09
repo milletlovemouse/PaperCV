@@ -142,7 +142,7 @@ try {
       const groups: Array<[string, number]> = [
         [".resume-name", sizes.nameSize],
         [".section-title", sizes.sectionSize],
-        [".entry-first-row > strong", sizes.entryTitleSize],
+        [".entry-first-row strong", sizes.entryTitleSize],
         [
           ".body-unit, .resume-contact, .resume-role, .entry-date, .entry-subtitle, .entry-secondary-meta, .school-tags",
           sizes.fontSize,
@@ -166,7 +166,7 @@ try {
         .locator(".preview-scroll .paper-page .sidebar-document .entry-heading")
         .first()
         .evaluate((node) => {
-          const title = node.querySelector(".entry-first-row > strong")!.getBoundingClientRect();
+          const title = node.querySelector(".entry-first-row strong")!.getBoundingClientRect();
           const date = node.querySelector(".entry-date")!.getBoundingClientRect();
           const subtitle = node.querySelector(".entry-subtitle")!.getBoundingClientRect();
           const location = node.querySelector(".entry-secondary-meta")!.getBoundingClientRect();

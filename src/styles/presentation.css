@@ -888,10 +888,62 @@
   > .entry-secondary-meta {
   grid-column: 1;
 }
-.resume-preview[data-entry-title-align="center"] .entry-first-row > .entry-inline-subtitle {
+/* Single-line headings align their title/subtitle pair as one unit. */
+.resume-preview[data-entry-layout="one"] .entry-first-row {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 100%;
+  grid-column: 1 / -1;
+}
+.resume-preview .entry-title-group {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 3px 10px;
+  min-width: min(100%, max(var(--entry-title-size), var(--resume-font-size)));
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+.resume-preview[data-entry-layout="one"] .entry-first-row > .entry-date {
+  min-width: 1em;
+}
+.resume-preview .entry-title-group:empty,
+.resume-preview[data-entry-layout="one"] .entry-date:empty {
+  display: none;
+}
+.resume-preview .entry-title-group > :is(strong, .entry-inline-subtitle) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  text-align: inherit;
+}
+.resume-preview[data-entry-title-align="right"] .entry-title-group {
+  justify-content: flex-end;
+  text-align: right;
+}
+.resume-preview[data-entry-layout="one"][data-entry-title-align="center"] .entry-first-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(calc(100% - 6em)) minmax(0, 1fr);
+}
+.resume-preview[data-entry-title-align="center"] .entry-title-group {
   grid-column: 2;
-  grid-row: 2;
+  grid-row: 1;
+  width: 100%;
+  justify-content: center;
   text-align: center;
+}
+.resume-preview.template-timeline[data-entry-layout="one"]:not([data-entry-title-align="center"])
+  .entry-first-row {
+  display: contents;
+}
+.resume-preview.template-timeline[data-entry-layout="one"]:not([data-entry-title-align="center"])
+  .entry-title-group {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
 }
 /* Inline fields share a real row. Equal alignments form one text group;
    separate center fields keep symmetric side tracks around the page midpoint. */
@@ -916,7 +968,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: 3px 8px;
-  min-width: 0;
+  min-width: 1em;
   max-width: 100%;
   grid-row: 1;
 }

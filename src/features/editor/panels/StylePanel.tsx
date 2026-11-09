@@ -91,16 +91,20 @@ export default function StylePanel({ resume, update, fitOnePage }: Props) {
           ]}
           onChange={(value) => style("entryTitleAlign", value)}
         />
-        <LayoutOptions
-          label="经历副标题对齐"
-          value={resume.style.entrySubtitleAlign || "left"}
-          options={[
-            ["left", "居左"],
-            ["center", "居中"],
-            ["right", "居右"],
-          ]}
-          onChange={(value) => style("entrySubtitleAlign", value)}
-        />
+        {resume.style.entryLayout === "one" ? (
+          <p className="setting-note">单行标题中，主标题与副标题作为整体，统一使用主标题对齐方式。</p>
+        ) : (
+          <LayoutOptions
+            label="经历副标题对齐"
+            value={resume.style.entrySubtitleAlign || "left"}
+            options={[
+              ["left", "居左"],
+              ["center", "居中"],
+              ["right", "居右"],
+            ]}
+            onChange={(value) => style("entrySubtitleAlign", value)}
+          />
+        )}
         <LayoutOptions
           label="正文对齐"
           value={resume.style.bodyAlign}

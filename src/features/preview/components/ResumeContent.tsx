@@ -142,8 +142,14 @@ function EntryContent({
           data-keep="next"
         >
           <div className="entry-first-row">
-            <strong>{entry.title}</strong>
-            {oneLine && subtitle && <span className="entry-inline-subtitle">{subtitle}</span>}
+            {oneLine ? (
+              <span className="entry-title-group">
+                {entry.title && <strong>{entry.title}</strong>}
+                {subtitle && <span className="entry-inline-subtitle">{subtitle}</span>}
+              </span>
+            ) : (
+              <strong>{entry.title}</strong>
+            )}
             <span className={`entry-date ${style.entryPriority === "location" ? "location-priority" : ""}`}>
               {primaryMeta}
               {oneLine && secondaryMeta && (

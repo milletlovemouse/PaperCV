@@ -132,7 +132,7 @@ try {
           .evaluateAll((nodes) =>
             nodes.flatMap((node) => {
               const box = node.getBoundingClientRect();
-              return [".entry-first-row > strong", ".entry-subtitle"].flatMap((selector) => {
+              return [".entry-first-row strong", ".entry-subtitle"].flatMap((selector) => {
                 const field = node.querySelector(selector);
                 if (!field?.textContent) return [];
                 const range = document.createRange();
@@ -195,6 +195,20 @@ try {
       assert.equal(restored.style[key as keyof typeof LAYOUT_DEFAULTS], value);
     console.log(`PASS ${template.name}: 3 alignments, 3 header layouts, 3 title styles and reset`);
   }
+  await pick("经历副标题对齐", "居右");
+  await pick("经历标题", "单行标题");
+  assert.equal(await page.getByRole("radiogroup", { name: "经历副标题对齐", exact: true }).count(), 0);
+  assert.equal((await saved()).style.entrySubtitleAlign, "right");
+  await pick("经历主标题对齐", "居中");
+  await geometry();
+  await pick("经历标题", "双行标题");
+  assert.equal(
+    await page
+      .getByRole("radiogroup", { name: "经历副标题对齐", exact: true })
+      .getByRole("radio", { name: "居右", exact: true })
+      .getAttribute("aria-checked"),
+    "true",
+  );
   // A visible example and a complete export/import round trip through the UI.
   await pick("页眉布局", "上下排列");
   await pick("姓名与求职意向", "居中");

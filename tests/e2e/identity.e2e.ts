@@ -321,7 +321,7 @@ try {
             }
             assert.equal(
               await entry
-                .locator(".entry-first-row > strong")
+                .locator(".entry-first-row strong")
                 .evaluate((node) => getComputedStyle(node).textAlign),
               align,
             );
@@ -334,11 +334,12 @@ try {
               const bounds = node.getBoundingClientRect();
               const children = [
                 ...node.querySelectorAll(
-                  ".entry-first-row > *, .entry-second-row > *, .entry-secondary-group > *, .entry-subtitle-link-group > *",
+                  ".entry-first-row > *, .entry-title-group > *, .entry-second-row > *, .entry-secondary-group > *, .entry-subtitle-link-group > *",
                 ),
               ].filter((element) => element.getClientRects().length);
               const overlap = [
                 ".entry-first-row",
+                ".entry-title-group",
                 ".entry-second-row",
                 ".entry-secondary-group",
                 ".entry-subtitle-link-group",
@@ -360,20 +361,46 @@ try {
                   }),
                 );
               });
+              // Preserved line-end spaces can hang outside a line box. Check
+              // visible characters before reporting a text overflow.
+              const textOverflow = children.flatMap((el) => {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const text = range.getBoundingClientRect();
+                if (!text.width || (text.left >= bounds.left - 1 && text.right <= bounds.right + 1))
+                  return [];
+                const visibleOverflow: string[] = [];
+                const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                while (walker.nextNode()) {
+                  const node = walker.currentNode;
+                  for (let i = 0; i < (node.textContent?.length || 0); i++) {
+                    if (!node.textContent![i].trim()) continue;
+                    range.setStart(node, i);
+                    range.setEnd(node, i + 1);
+                    const letter = range.getBoundingClientRect();
+                    if (letter.left < bounds.left - 1 || letter.right > bounds.right + 1)
+                      visibleOverflow.push(node.textContent![i]);
+                  }
+                }
+                return visibleOverflow.length ? [{ field: el.className || el.tagName, visibleOverflow }] : [];
+              });
               return {
                 width: bounds.width,
                 height: bounds.height,
                 overlap,
-                outside: children.some((el) => {
-                  const r = el.getBoundingClientRect();
-                  return r.left < bounds.left - 1 || r.right > bounds.right + 1;
-                }),
+                textOverflow,
+                outside:
+                  textOverflow.length > 0 ||
+                  children.some((el) => {
+                    const r = el.getBoundingClientRect();
+                    return r.left < bounds.left - 1 || r.right > bounds.right + 1;
+                  }),
               };
             });
             assert.equal(
               geometry.outside,
               false,
-              `${template.id}/${entryPriority}/${entryLayout}/${entryLinkLayout}/${align}: field outside heading`,
+              `${template.id}/${entryPriority}/${entryLayout}/${entryLinkLayout}/${align}: field outside heading ${JSON.stringify(geometry.textOverflow)}`,
             );
             assert.equal(
               geometry.overlap,
@@ -394,6 +421,96 @@ try {
   console.log(
     `PASS ${combinations} entry layouts: both priorities, metadata/link placement, long titles/URLs, all templates and screen/print bounds`,
   );
+  let singleTitleCombinations = 0;
+  for (const template of templates) {
+    for (const align of ["left", "center", "right"] as const) {
+      for (const metaAlign of ["left", "right"] as const) {
+        let expected: number[] | undefined;
+        for (const subtitleAlign of ["left", "center", "right"] as const) {
+          await update({
+            entry: { title: "山海", subtitle: "研发", location: "沪", url: "" },
+            style: {
+              ...STANDARD_STYLE,
+              ...template.defaults,
+              template: template.id,
+              entryLayout: "one",
+              entryTitleAlign: align,
+              entrySubtitleAlign: subtitleAlign,
+              entryMetaAlign: metaAlign,
+            },
+          });
+          const row = page.locator(".paper-page .entry-first-row");
+          const actual = await row.evaluate((node) => {
+            const group = node.querySelector(".entry-title-group")!;
+            const title = group.querySelector("strong")!.getBoundingClientRect();
+            const subtitle = group.querySelector(".entry-inline-subtitle")!.getBoundingClientRect();
+            const range = document.createRange();
+            range.selectNodeContents(group);
+            const text = range.getBoundingClientRect();
+            const bounds = group.getBoundingClientRect();
+            const row = node.getBoundingClientRect();
+            return {
+              sameLine: Math.abs(title.top - subtitle.top) < 2,
+              gap: subtitle.left - title.right,
+              left: text.left - bounds.left,
+              right: bounds.right - text.right,
+              center: Math.abs(text.left + text.width / 2 - row.left - row.width / 2),
+              positions: [title.left, title.top, subtitle.left, subtitle.top],
+            };
+          });
+          const name = `${template.id}/${align}/${metaAlign}/${subtitleAlign}`;
+          assert.equal(actual.sameLine, true, `${name}: title and subtitle must share a line`);
+          assert.ok(actual.gap >= 9 && actual.gap <= 11, `${name}: title and subtitle stay together`);
+          assert.ok(actual[align] < 2, `${name}: align the whole pair`);
+          if (expected)
+            assert.deepEqual(actual.positions, expected, `${name}: subtitle alignment is ignored`);
+          else expected = actual.positions;
+          singleTitleCombinations++;
+        }
+      }
+    }
+  }
+  console.log(
+    `PASS ${singleTitleCombinations} single-line title pairs: one alignment and no independent subtitle movement`,
+  );
+  for (const title of ["粤税通小程序", "数据分析资源管控"]) {
+    await update({
+      entry: {
+        title,
+        subtitle: `${title === "粤税通小程序" ? "微信小程序开发" : "前端开发"} - 广东睿盟计算机科技有限公司`,
+        start: "2022-06",
+        end: "2023-07",
+        location: "广州",
+        url: "",
+      },
+      style: {
+        ...STANDARD_STYLE,
+        template: "classic",
+        entryLayout: "one",
+        entryTitleAlign: "center",
+        entryMetaAlign: "right",
+      },
+    });
+    const geometry = await page.locator(".paper-page .entry-first-row").evaluate((node) => {
+      const group = node.querySelector(".entry-title-group")!;
+      const title = group.querySelector("strong")!.getBoundingClientRect();
+      const subtitle = group.querySelector(".entry-inline-subtitle")!.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(group);
+      const text = range.getBoundingClientRect();
+      const row = node.getBoundingClientRect();
+      const date = node.querySelector(".entry-date")!.getBoundingClientRect();
+      return {
+        sameLine: Math.abs(title.top - subtitle.top) < 2,
+        center: Math.abs(text.left + text.width / 2 - row.left - row.width / 2),
+        overlap: text.right > date.left + 1,
+      };
+    });
+    assert.equal(geometry.sameLine, true, `${title}: use available width before wrapping subtitle`);
+    assert.ok(geometry.center < 2, `${title}: keep the whole title pair centered`);
+    assert.equal(geometry.overlap, false, `${title}: title pair must not overlap metadata`);
+  }
+  console.log("PASS centered long single-line title pairs use available row width");
   let inlineCombinations = 0;
   for (const template of templates) {
     for (const subtitleAlign of ["left", "center", "right"] as const) {
@@ -451,6 +568,15 @@ try {
     `PASS ${inlineCombinations} short inline layouts: real shared line, paired and independent alignment`,
   );
   await mkdir("output/qa", { recursive: true });
+  for (const entryTitleAlign of ["left", "center", "right"] as const) {
+    await update({
+      entry: { title: "山海科技", subtitle: "产品经理 · 用户增长", location: "上海", url: "" },
+      style: { ...STANDARD_STYLE, entryLayout: "one", entryTitleAlign, entrySubtitleAlign: "right" },
+    });
+    await page.locator(".paper-page .entry-heading").screenshot({
+      path: `output/qa/single-title-${entryTitleAlign}.png`,
+    });
+  }
   for (const entryLinkAlign of ["left", "center"] as const) {
     await update({
       entry: {
