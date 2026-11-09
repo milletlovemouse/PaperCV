@@ -440,7 +440,7 @@ try {
             },
           });
           const row = page.locator(".paper-page .entry-first-row");
-          const actual = await row.evaluate((node) => {
+          const actual = await row.evaluate((node, metaAlign) => {
             const group = node.querySelector(".entry-title-group")!;
             const title = group.querySelector("strong")!.getBoundingClientRect();
             const subtitle = group.querySelector(".entry-inline-subtitle")!.getBoundingClientRect();
@@ -449,15 +449,24 @@ try {
             const text = range.getBoundingClientRect();
             const bounds = group.getBoundingClientRect();
             const row = node.getBoundingClientRect();
+            range.selectNodeContents(node.querySelector(".entry-date")!);
+            const metadata = range.getBoundingClientRect();
+            let expectedLeft = row.left + (row.width - text.width) / 2;
+            if (metadata.width && metadata.top < text.bottom - 1) {
+              expectedLeft =
+                metaAlign === "left"
+                  ? Math.max(expectedLeft, metadata.right + 8)
+                  : Math.min(expectedLeft, metadata.left - 8 - text.width);
+            }
             return {
               sameLine: Math.abs(title.top - subtitle.top) < 2,
               gap: subtitle.left - title.right,
               left: text.left - bounds.left,
               right: bounds.right - text.right,
-              center: Math.abs(text.left + text.width / 2 - row.left - row.width / 2),
+              center: Math.abs(text.left - expectedLeft),
               positions: [title.left, title.top, subtitle.left, subtitle.top],
             };
-          });
+          }, metaAlign);
           const name = `${template.id}/${align}/${metaAlign}/${subtitleAlign}`;
           assert.equal(actual.sameLine, true, `${name}: title and subtitle must share a line`);
           assert.ok(actual.gap >= 9 && actual.gap <= 11, `${name}: title and subtitle stay together`);
@@ -507,13 +516,20 @@ try {
       const metadataBounds = metadataText.getBoundingClientRect();
       return {
         sameLine: Math.abs(title.top - subtitle.top) < 2,
-        center: Math.abs(text.left + text.width / 2 - row.left - row.width / 2),
+        center: text.left + text.width / 2 - row.left - row.width / 2,
+        expectedCenter:
+          metadataBounds.top >= text.bottom - 1
+            ? 0
+            : Math.min(0, metadataBounds.left - 8 - text.width / 2 - row.left - row.width / 2),
         overlap: text.right > date.left + 1 && text.bottom > date.top + 1,
         metadataSingleLine: metadataBounds.height < parseFloat(getComputedStyle(dateNode).lineHeight) + 2,
       };
     });
     assert.equal(geometry.sameLine, true, `${title}: use available width before wrapping subtitle`);
-    assert.ok(geometry.center < 2, `${title}: keep the whole title pair centered`);
+    assert.ok(
+      Math.abs(geometry.center - geometry.expectedCenter) < 2,
+      `${title}: shift only as far as needed to clear metadata`,
+    );
     assert.equal(geometry.overlap, false, `${title}: title pair must not overlap metadata`);
     assert.equal(
       geometry.metadataSingleLine,
@@ -524,17 +540,25 @@ try {
   console.log("PASS centered long single-line title pairs use available row width");
   for (const metaAlign of ["left", "right"] as const) {
     for (const paper of ["a4", "letter"] as const) {
-      for (const title of ["山海", "广东税务智能导办平台", "山海"]) {
-        const long = title !== "山海";
+      for (const mode of ["centered", "shifted", "wrapped", "centered"] as const) {
+        const title = mode === "centered" ? "山海" : "数据分析资源管控";
+        const long = mode === "wrapped";
         await update({
-          entry: { title, subtitle: long ? "前端开发 - 广东睿盟计算机科技有限公司" : "研发" },
+          entry: {
+            title,
+            subtitle: long
+              ? "前端开发 - 广东睿盟计算机科技有限公司及平台研发部门核心应用开发组"
+              : mode === "shifted"
+                ? "前端开发 - 山海科技有限公司应用平台"
+                : "研发",
+          },
           style: { paper, entryMetaAlign: metaAlign, fontSize: 14, entryTitleSize: 14 },
         });
         const heading = page.locator(".paper-page .entry-heading");
         assert.equal(
           await heading.getAttribute("data-metadata-row"),
           long ? "true" : null,
-          `${paper}/${metaAlign}/${title}: recompute metadata placement after content/paper changes`,
+          `${paper}/${metaAlign}/${mode}: recompute metadata placement after content/paper changes`,
         );
         const geometry = await heading.evaluate((node) => {
           const row = node.querySelector(".entry-first-row")!.getBoundingClientRect();
@@ -542,17 +566,32 @@ try {
           const range = document.createRange();
           range.selectNodeContents(metadata);
           const text = range.getBoundingClientRect();
-          const title = node.querySelector(".entry-title-group")!.getBoundingClientRect();
+          const titleNode = node.querySelector(".entry-title-group")!;
+          range.selectNodeContents(titleNode);
+          const title = range.getBoundingClientRect();
+          const titleMain = titleNode.querySelector("strong")!.getBoundingClientRect();
+          const subtitle = titleNode.querySelector(".entry-inline-subtitle")!.getBoundingClientRect();
           return {
             left: Math.abs(text.left - row.left),
             right: Math.abs(row.right - text.right),
             lines: text.height / parseFloat(getComputedStyle(metadata).lineHeight),
             separate: text.top >= title.bottom - 1,
+            center: title.left + title.width / 2 - row.left - row.width / 2,
+            gap: text.left > title.left ? text.left - title.right : title.left - text.right,
+            titleSameLine: Math.abs(titleMain.top - subtitle.top) < 2,
           };
         });
         assert.ok(geometry[metaAlign] < 2, `${paper}/${metaAlign}: preserve metadata alignment`);
         assert.ok(geometry.lines < 1.1, `${paper}/${metaAlign}: do not squeeze Chinese dates or city`);
         assert.equal(geometry.separate, long, `${paper}/${metaAlign}: move metadata only when necessary`);
+        assert.equal(geometry.titleSameLine, true, `${paper}/${metaAlign}/${mode}: keep title pair inline`);
+        if (mode === "shifted") {
+          assert.ok(
+            (metaAlign === "left" ? geometry.center : -geometry.center) > 2,
+            `${paper}/${metaAlign}: shift toward free space ${JSON.stringify(geometry)}`,
+          );
+          assert.ok(Math.abs(geometry.gap - 8) < 2, `${paper}/${metaAlign}: use the smallest shift`);
+        } else assert.ok(Math.abs(geometry.center) < 2, `${paper}/${metaAlign}: retain page centering`);
         assert.equal(await page.locator(".paper-page .entry-width-probe").count(), 0);
       }
     }

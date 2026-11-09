@@ -968,7 +968,12 @@
   max-width: none;
   white-space: nowrap;
 }
-/* If fields cannot share a row, move the whole metadata block. */
+/* A centered pair can slide toward free space while metadata stays anchored. */
+.resume-preview[data-entry-layout="one"] .entry-heading[data-title-positioned] .entry-first-row {
+  grid-template-columns: var(--entry-title-left) minmax(0, var(--entry-title-width)) minmax(0, 1fr);
+  column-gap: 0;
+}
+/* Only move metadata after the combined intrinsic widths exceed the row. */
 .resume-preview[data-entry-layout="one"] .entry-heading[data-metadata-row] .entry-first-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
