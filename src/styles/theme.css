@@ -293,7 +293,7 @@
 .editor-theme .layout-reset:hover {
   color: var(--ui-text);
 }
-/* Keep Radix's focus rings, internal padding and disabled behavior intact. */
+/* Keep field borders stable when an input receives focus. */
 .radix-themes .rt-TextFieldRoot,
 .radix-themes .rt-TextAreaRoot,
 .radix-themes .ui-select {
@@ -301,11 +301,14 @@
   color: var(--ui-text);
   box-shadow: inset 0 0 0 1px var(--ui-border);
 }
-.radix-themes .rt-TextFieldRoot:focus-within,
 .radix-themes .rt-TextAreaRoot:focus-within,
 .radix-themes .ui-select:focus-visible {
   outline: 2px solid var(--ui-focus);
   outline-offset: 2px;
+}
+.radix-themes .rt-TextFieldRoot:focus-within,
+.radix-themes .rt-TextFieldInput:focus {
+  outline: none;
 }
 .radix-themes .rt-TextFieldInput,
 .radix-themes .rt-TextAreaInput {
@@ -849,13 +852,58 @@
   box-shadow: inset 0 0 0 1px var(--ui-focus);
 }
 .rich-link-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 10px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  background: var(--ui-subtle);
   border-bottom: 1px solid var(--ui-border);
+  color: var(--ui-text);
+  font-size: 12px;
+}
+.rich-link-heading,
+.rich-link-heading > label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.rich-link-heading {
+  justify-content: space-between;
+}
+.rich-link-heading > label {
+  font-weight: 500;
+}
+.rich-link-form .rich-link-input {
+  width: 100%;
+  min-width: 0;
+}
+.rich-link-hint,
+.rich-link-error {
+  margin: 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.rich-link-hint {
+  color: var(--ui-muted);
   font-size: 11px;
+}
+.rich-link-error {
+  color: var(--ui-text);
+  font-size: 11px;
+  font-weight: 500;
+}
+.rich-link-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rich-link-actions > button {
+  min-width: 64px;
+  flex-shrink: 0;
+  padding-inline: 14px;
+  gap: 6px;
 }
 .editor-theme .preview-panel {
   background: var(--ui-subtle);

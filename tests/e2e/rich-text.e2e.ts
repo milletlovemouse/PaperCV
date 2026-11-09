@@ -34,6 +34,8 @@ await page.route("**/__rich-text-test", (route) =>
     import React from "/node_modules/.vite/deps/react.js";
     import ReactDOM from "/node_modules/.vite/deps/react-dom_client.js";
     import { Theme } from "${themeModule}";
+    import "/node_modules/@fontsource-variable/noto-sans-sc/index.css";
+    import "/node_modules/@fontsource-variable/noto-serif-sc/index.css";
     import "/src/styles/radix.css";
     import RichText from "/src/features/rich-text/components/RichText.tsx";
     import ResumePreview from "/src/features/preview/components/ResumePreview.tsx";
@@ -54,7 +56,7 @@ await page.route("**/__rich-text-test", (route) =>
         sections: [{ ...value.sections[0], entries: [{ ...value.sections[0].entries[0], description: html }] }] }));
       window.fixture = { setDescription, setTemplate: template => setResume(value => ({
         ...value, style: { ...value.style, template } })) };
-      return React.createElement("div", { style: { display: "grid", gridTemplateColumns: "420px 1fr", gap: "24px" } },
+      return React.createElement("div", { style: { display: "grid", gridTemplateColumns: "minmax(0, 420px) minmax(0, 1fr)", gap: "24px" } },
         React.createElement(RichText, { value: resume.sections[0].entries[0].description, onChange: setDescription }),
         React.createElement(ResumePreview, { resume }));
     }
@@ -259,6 +261,103 @@ try {
   await editor.press("Shift+Tab");
   assert.equal((await metrics())[0].indent, 0);
   console.log("PASS paragraph keyboard indentation reaches preview");
+
+  await setDescription("<p>中文斜体测试</p>");
+  await page.evaluate(() => document.fonts.ready);
+  const normalText = await rows.locator(".description-text").screenshot();
+  await editor.evaluate((root) => {
+    (root as HTMLElement).focus();
+    window.getSelection()!.selectAllChildren(root.querySelector("p")!);
+  });
+  await page.getByRole("button", { name: "斜体", exact: true }).click();
+  await page.waitForFunction(() =>
+    document.querySelector(".paper-page .description-text i, .paper-page .description-text em"),
+  );
+  assert.equal(await editor.locator("i, em").count(), 1);
+  for (const media of ["screen", "print"] as const) {
+    await page.emulateMedia({ media });
+    assert.deepEqual(
+      await rows.locator("i, em").evaluate((node) => ({
+        style: getComputedStyle(node).fontStyle,
+        synthesis: getComputedStyle(node).fontSynthesis,
+      })),
+      { style: "italic", synthesis: "style" },
+    );
+  }
+  await page.emulateMedia({ media: "screen" });
+  assert.notDeepEqual(await rows.locator(".description-text").screenshot(), normalText);
+  console.log("PASS Chinese italics change visually and remain enabled in preview and print");
+
+  await setDescription("<p>项目主页</p>");
+  await editor.evaluate((root) => {
+    (root as HTMLElement).focus();
+    const text = root.querySelector("p")!.firstChild!;
+    window.getSelection()!.setBaseAndExtent(text, 0, text, 2);
+  });
+  await page.getByRole("button", { name: "插入链接", exact: true }).click();
+  const linkInput = page.getByRole("textbox", { name: "链接地址", exact: true });
+  await linkInput.fill("javascript:alert(1)");
+  await page.getByRole("button", { name: "应用链接", exact: true }).click();
+  assert.equal(await linkInput.getAttribute("aria-invalid"), "true");
+  assert.equal(await editor.locator("a").count(), 0);
+  await linkInput.fill("https://example.com/project");
+  await linkInput.press("Enter");
+  assert.equal(await editor.locator("a").textContent(), "项目");
+  assert.equal(await editor.locator("a").getAttribute("href"), "https://example.com/project");
+  await page.waitForFunction(
+    () =>
+      document.querySelector(".paper-page .description-text a")?.getAttribute("href") ===
+      "https://example.com/project",
+  );
+  console.log("PASS link validation and submission preserve the selected text");
+
+  await mkdir("output/qa", { recursive: true });
+  for (const width of [1400, 360]) {
+    await page.setViewportSize({ width, height: 1100 });
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((theme) => {
+        document.documentElement.dataset.theme = theme;
+        const root = document.querySelector(".radix-themes")!;
+        root.classList.remove("light", "dark");
+        root.classList.add(theme);
+      }, theme);
+      await caret("a");
+      await page.getByRole("button", { name: "插入链接", exact: true }).click();
+      await linkInput.focus();
+      assert.deepEqual(
+        await linkInput.evaluate((input) => ({
+          input: getComputedStyle(input).outlineStyle,
+          wrapper: getComputedStyle(input.closest(".rt-TextFieldRoot")!).outlineStyle,
+        })),
+        { input: "none", wrapper: "none" },
+      );
+      const form = page.getByRole("form", { name: "链接设置", exact: true });
+      const bounds = await form.boundingBox();
+      const inputBounds = await linkInput.boundingBox();
+      const apply = page.getByRole("button", { name: "应用链接", exact: true });
+      const buttonBounds = await apply.boundingBox();
+      assert.ok(bounds && inputBounds && buttonBounds);
+      assert.ok(inputBounds.width >= bounds.width - 30);
+      assert.ok(buttonBounds.y > inputBounds.y + inputBounds.height);
+      assert.ok(buttonBounds.x + buttonBounds.width <= bounds.x + bounds.width);
+      assert.ok(
+        await apply.evaluate(
+          (button) =>
+            parseFloat(getComputedStyle(button).paddingLeft) >= 14 &&
+            parseFloat(getComputedStyle(button).paddingRight) >= 14,
+        ),
+      );
+      await page.locator(".rich-box").screenshot({ path: `output/qa/rich-link-${theme}-${width}.png` });
+      await page.getByRole("button", { name: "关闭链接设置", exact: true }).click();
+      assert.equal(await editor.evaluate((root) => document.activeElement === root), true);
+    }
+  }
+  await page.setViewportSize({ width: 1400, height: 1100 });
+  await page.evaluate(() => {
+    document.documentElement.dataset.theme = "light";
+    document.querySelector(".radix-themes")!.classList.replace("dark", "light");
+  });
+  console.log("PASS link panel spacing and stable input borders in desktop/mobile and light/dark themes");
 
   const longText = Array.from({ length: 220 }, (_, i) => `第${i + 1}项：通过数据分析持续改进产品体验。`).join(
     "",

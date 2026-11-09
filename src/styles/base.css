@@ -753,6 +753,12 @@ input[type="file"] {
   color: #5e6757;
   word-break: break-word;
 }
+/* Bundled Chinese fonts have normal faces. Allow synthetic italics only in
+   rich text, including the same content in thumbnails, preview and print. */
+.rich-content,
+.resume-preview .description-text {
+  font-synthesis: style;
+}
 .rich-content:empty:before {
   content: attr(data-placeholder);
   color: #b3bbaa;

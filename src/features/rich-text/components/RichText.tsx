@@ -5,6 +5,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Check,
   IndentDecrease,
   IndentIncrease,
   Italic,
@@ -15,6 +16,7 @@ import {
   RemoveFormatting,
   Underline,
   Undo2,
+  X,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Button, IconButton, TextField } from "@/shared/ui";
@@ -330,7 +332,15 @@ export default function RichText({
               }
             }}
           >
-            <label htmlFor={`${linkId}-url`}>链接地址</label>
+            <div className="rich-link-heading">
+              <label htmlFor={`${linkId}-url`}>
+                <Link size={14} aria-hidden="true" />
+                链接地址
+              </label>
+              <IconButton variant="ghost" size="1" title="关闭链接设置" onClick={closeLink}>
+                <X size={14} />
+              </IconButton>
+            </div>
             <TextField.Root
               id={`${linkId}-url`}
               ref={linkInput}
@@ -338,26 +348,33 @@ export default function RichText({
               value={linkUrl}
               placeholder="https://example.com"
               autoComplete="off"
+              inputMode="url"
               spellCheck={false}
               aria-invalid={Boolean(linkError)}
-              aria-describedby={linkError ? `${linkId}-error` : undefined}
-              style={{ flex: "1 1 180px", minWidth: 0 }}
+              aria-describedby={linkError ? `${linkId}-error` : `${linkId}-hint`}
+              className="rich-link-input"
               onChange={(event) => {
                 setLinkUrl(event.target.value);
                 setLinkError("");
               }}
             />
-            <Button type="submit" variant="solid" aria-label="应用链接">
-              应用
-            </Button>
-            <Button aria-label="取消链接设置" onClick={closeLink}>
-              取消
-            </Button>
             {linkError && (
-              <span id={`${linkId}-error`} role="alert" style={{ width: "100%", color: "#a33232" }}>
+              <span id={`${linkId}-error`} role="alert" className="rich-link-error">
                 {linkError}
               </span>
             )}
+            <p id={`${linkId}-hint`} className="rich-link-hint">
+              为选中文字添加链接；未选中文字时插入链接地址。
+            </p>
+            <div className="rich-link-actions">
+              <Button aria-label="取消链接设置" onClick={closeLink}>
+                取消
+              </Button>
+              <Button type="submit" variant="solid" aria-label="应用链接">
+                <Check size={14} aria-hidden="true" />
+                应用链接
+              </Button>
+            </div>
           </form>
         )}
         <div
